@@ -99,7 +99,9 @@ export function listProjectFiles(options: ListProjectFilesOptions): string[] {
       if (skipNestedStandards && isUnderNestedStandards(options.projectRoot, relativePath)) {
         continue;
       }
-      out.push(path.join(options.projectRoot, relativePath));
+      const absolutePath = path.join(options.projectRoot, relativePath);
+      if (!fs.existsSync(absolutePath)) continue;
+      out.push(absolutePath);
     }
     return out;
   }
