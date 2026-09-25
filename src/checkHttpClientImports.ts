@@ -41,10 +41,12 @@ function normalizeSlashes(value: string): string {
   return value.replace(/\\/g, '/');
 }
 
-function isFeaturePath(relativePath: string): boolean {
-  const file = normalizeSlashes(relativePath);
-  if (!/(?:^|\/)features\//.test(file)) return false;
-  return !/\/features\/(?:.+\/)?(?:queries|services)\//.test(file);
+function isUnderFeatures(relativePath: string): boolean {
+  return /(?:^|\/)features\//.test(normalizeSlashes(relativePath));
+}
+
+function isQueriesOrServicesPath(relativePath: string): boolean {
+  return /\/features\/(?:.+\/)?(?:queries|services)\//.test(normalizeSlashes(relativePath));
 }
 
 function isSkippedPath(relativePath: string): boolean {
@@ -93,6 +95,15 @@ function importSourceFromNode(node: Record<string, unknown>): string | null {
   return null;
 }
 
+function reexportSourceFromNode(node: Record<string, unknown>): string | null {
+  if (node.type !== 'ExportNamedDeclaration' && node.type !== 'ExportAllDeclaration') {
+    return null;
+  }
+  const source = node.source as { type?: string; value?: unknown } | undefined;
+  if (source?.type === 'Literal' && typeof source.value === 'string') return source.value;
+  return null;
+}
+
 function checkFile(
   absolutePath: string,
   projectRoot: string,
@@ -100,10 +111,21 @@ function checkFile(
   httpClientModule?: string
 ): CheckIssue[] {
   const relativePath = toRelative(projectRoot, absolutePath);
-  if (!isFeaturePath(relativePath)) return [];
+  if (!isUnderFeatures(relativePath)) return [];
+  const allowHttpClientImport = isQueriesOrServicesPath(relativePath);
   const issues: CheckIssue[] = [];
   const result = parseSync(absolutePath, text, { lang: langFor(absolutePath) });
   walkAst(result.program, (node) => {
+    const reexportSource = reexportSourceFromNode(node);
+    if (reexportSource !== null && isHttpClientSource(reexportSource, httpClientModule)) {
+      issues.push({
+        file: relativePath,
+        line: lineOf(text, (node.start as number) ?? 0),
+        message: 'features must not re-export the HTTP client module',
+      });
+      return;
+    }
+    if (allowHttpClientImport) return;
     const source = importSourceFromNode(node);
     if (source === null) return;
     if (!isHttpClientSource(source, httpClientModule)) return;

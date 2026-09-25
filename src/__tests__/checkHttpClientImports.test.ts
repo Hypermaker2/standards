@@ -72,6 +72,45 @@ export const value = api;
     expect(checkHttpClientImports({ projectRoot: root })).toEqual([]);
   });
 
+  it('fails when a feature services module re-exports the HTTP client', () => {
+    const root = makeScratch();
+    fs.mkdirSync(path.join(root, 'frontend/src/features/x/services'), { recursive: true });
+    fs.mkdirSync(path.join(root, 'frontend/src/api'), { recursive: true });
+    fs.writeFileSync(path.join(root, 'frontend/src/api/client.ts'), 'export const api = {};\n');
+    fs.writeFileSync(
+      path.join(root, 'frontend/src/features/x/services/api.ts'),
+      `export { api } from '../../../api/client';
+`
+    );
+    const issues = checkHttpClientImports({ projectRoot: root });
+    expect(issues).toEqual([
+      {
+        file: 'frontend/src/features/x/services/api.ts',
+        line: 1,
+        message: 'features must not re-export the HTTP client module',
+      },
+    ]);
+  });
+
+  it('passes when a feature query hook imports the HTTP client and does work', () => {
+    const root = makeScratch();
+    fs.mkdirSync(path.join(root, 'frontend/src/features/x/queries'), { recursive: true });
+    fs.mkdirSync(path.join(root, 'frontend/src/api'), { recursive: true });
+    fs.writeFileSync(
+      path.join(root, 'frontend/src/api/client.ts'),
+      'export const api = { fetchX: async () => ({}) };\n'
+    );
+    fs.writeFileSync(
+      path.join(root, 'frontend/src/features/x/queries/useX.ts'),
+      `import { api } from '../../../api/client';
+export function useX() {
+  return api.fetchX();
+}
+`
+    );
+    expect(checkHttpClientImports({ projectRoot: root })).toEqual([]);
+  });
+
   it('honors an explicit httpClientModule suffix', () => {
     const root = makeScratch();
     fs.mkdirSync(path.join(root, 'src/features'), { recursive: true });

@@ -1,5 +1,5 @@
 # Standards
-<!-- standards:begin 1.7.0 bun-ts -->
+<!-- standards:begin 1.7.2 bun-ts -->
 ## Working in this repo
 
 - Managed `standards:begin`/`standards:end` in `AGENTS.md`/`DESIGN.md` is owned by `@dino/standards`; never edit by hand. Change the rule in `Hypermaker2/standards`, release a tag, then `bun remove @dino/standards && bun add -d github:Hypermaker2/standards#vX.Y.Z && bunx standards sync`. Edit only the project layer below.
