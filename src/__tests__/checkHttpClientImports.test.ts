@@ -55,6 +55,23 @@ export function ChatPage() { return useHealth(); }
     expect(checkHttpClientImports({ projectRoot: root })).toEqual([]);
   });
 
+  it('allows the queries and services layers inside a feature folder', () => {
+    const root = makeScratch();
+    fs.mkdirSync(path.join(root, 'frontend/src/features/chat/queries'), { recursive: true });
+    fs.mkdirSync(path.join(root, 'frontend/src/features/chat/services'), { recursive: true });
+    fs.mkdirSync(path.join(root, 'frontend/src/shared/lib'), { recursive: true });
+    fs.writeFileSync(path.join(root, 'frontend/src/shared/lib/api.ts'), 'export const api = {};\n');
+    for (const file of ['queries/useChats.ts', 'services/chatService.ts']) {
+      fs.writeFileSync(
+        path.join(root, 'frontend/src/features/chat', file),
+        `import { api } from '@/shared/lib/api';
+export const value = api;
+`
+      );
+    }
+    expect(checkHttpClientImports({ projectRoot: root })).toEqual([]);
+  });
+
   it('honors an explicit httpClientModule suffix', () => {
     const root = makeScratch();
     fs.mkdirSync(path.join(root, 'src/features'), { recursive: true });

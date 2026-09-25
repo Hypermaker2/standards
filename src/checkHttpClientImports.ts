@@ -42,7 +42,9 @@ function normalizeSlashes(value: string): string {
 }
 
 function isFeaturePath(relativePath: string): boolean {
-  return /(?:^|\/)features\//.test(normalizeSlashes(relativePath));
+  const file = normalizeSlashes(relativePath);
+  if (!/(?:^|\/)features\//.test(file)) return false;
+  return !/\/features\/(?:.+\/)?(?:queries|services)\//.test(file);
 }
 
 function isSkippedPath(relativePath: string): boolean {
