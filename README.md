@@ -9,7 +9,7 @@ Values (token numbers, product rules) stay in each project. This package owns vo
 The GitHub repo is public (Bun resolves `github:` deps via the tarball API).
 
 ```bash
-bun add -d github:Hypermaker2/standards#v1.1.4
+bun add -d github:Hypermaker2/standards#v1.2.0
 ```
 
 ## Consumers
@@ -36,19 +36,20 @@ bunx standards check
 
 ## standards.json keys
 
-| Key              | Default                | Purpose                                                                                                                    |
-| ---------------- | ---------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `profile`        | required               | `bun-ts` or `python`                                                                                                       |
-| `design`         | required               | whether DESIGN.md and token checks run                                                                                     |
-| `tokensCss`      | unset                  | path to tokens.css when `design` is true                                                                                   |
-| `commentExempt`  | `[]`                   | path prefixes skipped by the comment scanner                                                                               |
-| `extraRoles`     | `[]`                   | additional token roles allowed beyond the package list                                                                     |
-| `fallbackExempt` | `[]`                   | path prefixes skipped by the no-fallbacks check                                                                            |
-| `configModules`  | unset                  | repo-relative files allowed to read env keys; must export parsed values only, never the raw environment object             |
-| `envReadExempt`  | `[]`                   | path prefixes skipped by the env-read check                                                                                |
-| `effectWrappers` | unset (ban everywhere) | repo-relative files allowed to call `useEffect`; each must be a real mount/synced wrapper, not a rename with optional deps |
-| `tscAllowed`     | `[]`                   | workspace directories allowed to keep `tsc` in scripts                                                                     |
-| `ci`             | `false`                | when true, sync writes `.github/workflows/standards.yml` and check verifies it                                             |
+| Key                    | Default                       | Purpose                                                                                                                    |
+| ---------------------- | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `profile`              | required                      | `bun-ts` or `python`                                                                                                       |
+| `design`               | required                      | whether DESIGN.md and token checks run                                                                                     |
+| `tokensCss`            | unset                         | path to tokens.css when `design` is true                                                                                   |
+| `commentExempt`        | `[]`                          | path prefixes skipped by the comment scanner                                                                               |
+| `extraRoles`           | `[]`                          | additional token roles allowed beyond the package list                                                                     |
+| `fallbackExempt`       | `[]`                          | path prefixes skipped by the no-fallbacks check                                                                            |
+| `configModules`        | unset                         | repo-relative files allowed to read env keys; must export parsed values only, never the raw environment object             |
+| `envReadExempt`        | `[]`                          | path prefixes skipped by the env-read check                                                                                |
+| `effectWrappers`       | unset (ban everywhere)        | repo-relative files allowed to call `useEffect`; each must be a real mount/synced wrapper, not a rename with optional deps |
+| `tscAllowed`           | `[]`                          | workspace directories allowed to keep `tsc` in scripts                                                                     |
+| `ci`                   | `false`                       | when true, sync writes `.github/workflows/standards.yml` and check verifies it                                             |
+| `projectLayerMaxLines` | `{ agents: 100, design: 40 }` | optional per-doc budgets for non-blank project-layer lines after `standards:end`                                           |
 
 ## Mixed repos
 
@@ -79,6 +80,7 @@ Python sync writes `ruff.base.toml` (package defaults) and, if missing, a `ruff.
 - Bun-ts: `useEffect` only in `effectWrappers` (missing key bans it everywhere; tests exempt). Wrapper files must expose `useMountEffect(effect)` calling `useEffect(effect, [])` (or an aliased import with `[]`) and may expose `useSyncedEffect(effect, deps)` with required deps. Optional deps or a `useMountEffect` that accepts deps is a rename and fails.
 - Bun-ts: lockfile has no `typescript@5` / `@6`; no `tsc` in package scripts or GitHub workflows (`tscAllowed` optional).
 - Bun-ts with `ci: true`: `.github/workflows/standards.yml` matches the package template and `.bun-version` exists.
+- Project layer of `AGENTS.md` / `DESIGN.md` (non-blank lines after `standards:end`) stays within `projectLayerMaxLines` (defaults 100 / 40); the configured budget is printed on failure.
 
 ## Recommended scripts
 

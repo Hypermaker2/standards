@@ -18,6 +18,10 @@ export type StandardsConfig = {
   effectWrappers?: string[];
   tscAllowed?: string[];
   ci?: boolean;
+  projectLayerMaxLines?: {
+    agents?: number;
+    design?: number;
+  };
 };
 
 export type CheckIssue = {
@@ -64,6 +68,7 @@ export function loadStandardsConfig(projectRoot: string): StandardsConfig {
   if (parsed.ci !== undefined && typeof parsed.ci !== 'boolean') {
     throw new Error(`standards.json ci must be a boolean`);
   }
+  const projectLayerMaxLines = parseProjectLayerMaxLines(parsed.projectLayerMaxLines);
   return {
     ...parsed,
     commentExempt: optionalStringArray(parsed.commentExempt, 'commentExempt'),
@@ -73,7 +78,40 @@ export function loadStandardsConfig(projectRoot: string): StandardsConfig {
     envReadExempt: optionalStringArray(parsed.envReadExempt, 'envReadExempt'),
     effectWrappers: optionalStringArray(parsed.effectWrappers, 'effectWrappers'),
     tscAllowed: optionalStringArray(parsed.tscAllowed, 'tscAllowed'),
+    projectLayerMaxLines,
   };
+}
+
+function parseProjectLayerMaxLines(
+  value: unknown
+): StandardsConfig['projectLayerMaxLines'] | undefined {
+  if (value === undefined) return undefined;
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error('standards.json projectLayerMaxLines must be an object');
+  }
+  const record = value as Record<string, unknown>;
+  const result: { agents?: number; design?: number } = {};
+  if (record.agents !== undefined) {
+    if (
+      typeof record.agents !== 'number' ||
+      !Number.isInteger(record.agents) ||
+      record.agents < 1
+    ) {
+      throw new Error('standards.json projectLayerMaxLines.agents must be a positive integer');
+    }
+    result.agents = record.agents;
+  }
+  if (record.design !== undefined) {
+    if (
+      typeof record.design !== 'number' ||
+      !Number.isInteger(record.design) ||
+      record.design < 1
+    ) {
+      throw new Error('standards.json projectLayerMaxLines.design must be a positive integer');
+    }
+    result.design = record.design;
+  }
+  return result;
 }
 
 export function formatIssue(issue: CheckIssue): string {

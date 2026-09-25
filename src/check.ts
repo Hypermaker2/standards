@@ -5,6 +5,7 @@ import { checkConfigs } from './checkConfigs.ts';
 import { checkEnvReads } from './checkEnvReads.ts';
 import { checkNoComments } from './checkNoComments.ts';
 import { checkNoFallbacks } from './checkNoFallbacks.ts';
+import { checkProjectLayer } from './checkProjectLayer.ts';
 import { checkScripts } from './checkScripts.ts';
 import { checkSingleTypeScript } from './checkSingleTypeScript.ts';
 import { checkTokens } from './checkTokens.ts';
@@ -92,6 +93,13 @@ export function checkProject(projectRoot: string, config: StandardsConfig): Chec
   }
 
   issues.push(...checkConfigs(projectRoot, config.profile));
+  issues.push(
+    ...checkProjectLayer({
+      projectRoot,
+      design: config.design,
+      projectLayerMaxLines: config.projectLayerMaxLines,
+    })
+  );
   issues.push(
     ...checkNoComments({
       projectRoot,
