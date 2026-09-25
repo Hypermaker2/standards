@@ -17,6 +17,7 @@
 | Resetting state when a prop changes | `key` on the component |
 
 - Features import queries and services, never the HTTP client. Responses are parsed once, at the client boundary, against the shared schemas.
+- Config modules listed in `configModules` export parsed typed values only, never the environment object. Reading individual keys to parse is fine; returning, aliasing, or spreading `process.env` / `import.meta.env` is not.
 - Class composition: `cn` from the `cn` package; `cva` only as a recorded deviation.
 - Base UI via `@base-ui/react` (shadcn `base-nova` style). Components are owned in the repo under `shared/components/ui`, not a dependency to work around.
 - TanStack Query for server state. Express 5 backend. SQLite persistence. zod at untrusted boundaries.

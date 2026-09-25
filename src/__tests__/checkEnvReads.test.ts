@@ -43,4 +43,38 @@ describe('checkEnvReads', () => {
       })
     ).toEqual([]);
   });
+
+  it('rejects a config module that launders the raw environment object', () => {
+    const root = makeScratch();
+    const configPath = path.join('src', 'config.ts');
+    fs.mkdirSync(path.join(root, 'src'));
+    fs.writeFileSync(
+      path.join(root, configPath),
+      `export function runtimeProcessEnv() {\n  return process.env;\n}\nexport const envAlias = process.env;\nexport const merged = () => ({ ...process.env });\n`
+    );
+    const issues = checkEnvReads({
+      projectRoot: root,
+      configModules: [configPath],
+    });
+    expect(issues.length).toBeGreaterThanOrEqual(3);
+    expect(issues.some((issue) => issue.message.includes('return'))).toBe(true);
+    expect(issues.some((issue) => issue.message.includes('alias'))).toBe(true);
+    expect(issues.some((issue) => issue.message.includes('spread'))).toBe(true);
+  });
+
+  it('allows a zod-parsing config module that reads env keys', () => {
+    const root = makeScratch();
+    const configPath = path.join('src', 'config.ts');
+    fs.mkdirSync(path.join(root, 'src'));
+    fs.writeFileSync(
+      path.join(root, configPath),
+      `import { z } from 'zod';\nconst schema = z.object({ PORT: z.string() });\nexport const config = schema.parse({\n  PORT: process.env.PORT,\n});\n`
+    );
+    expect(
+      checkEnvReads({
+        projectRoot: root,
+        configModules: [configPath],
+      })
+    ).toEqual([]);
+  });
 });
