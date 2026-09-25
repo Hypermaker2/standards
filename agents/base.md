@@ -1,3 +1,11 @@
+## Working in this repo
+
+- The block between `standards:begin` and `standards:end` in `AGENTS.md` and `DESIGN.md` is written by `@dino/standards` and is never edited by hand. Change the rule in the standards repository (`Hypermaker2/standards`), release a tag, then bump every consumer: `bun remove @dino/standards && bun add -d github:Hypermaker2/standards#vX.Y.Z && bunx standards sync`. The project layer below the block is the only part edited in this repository.
+- `bunx standards check` runs first in `lint`. When it fails, fix the code so it meets the rule. Never satisfy a check by renaming, aliasing, wrapping, exempting or spreading the thing it forbids; a wrapper that forwards to the forbidden call is the forbidden call. If a pattern is legitimately new, change the check in the standards repository in the same piece of work and record the exception in the project layer.
+- Configuration keys in `standards.json` (`configModules`, `effectWrappers`, `envReadExempt`, `commentExempt`, `extraRoles`, `tscAllowed`, `fallbackExempt`) declare where a rule's one legitimate exception lives. Every entry needs one line in the project layer saying why. Application code is never exempted.
+- Before reporting a task done, run the repository's `check` command (lint, typecheck, tests, format check, audit) from the root and make it pass; run only a subset when the task brief says so and name what was skipped. Never commit or push unless asked.
+- Facts that only a comment used to carry go into a name, a test, or the commit message body, in that order of preference.
+
 ## Code rules
 
 - Repository invariants are executable checks that run inside `lint` (a `scripts/check-*.ts` with a colocated test), never review conventions. When a legitimate new pattern needs an exception, change the check in the same change; do not disable it.
@@ -31,7 +39,7 @@
 
 - Conventional commits: `feat:`, `fix:`, `chore:`, `refactor:`.
 - Dependency hygiene: remove unused dependencies and their build config immediately; audit bundle impact before adding one.
-- After a task, run lint, typecheck, and test before considering it done. Never commit or push unless asked.
+- Conventional commit bodies carry the why: facts removed from comments, external references, and the reason for any exception.
 
 ## Scope
 
