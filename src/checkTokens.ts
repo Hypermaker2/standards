@@ -298,6 +298,41 @@ export function checkTokens(
     });
   }
 
+  const allNamedProps = new Map<string, string>();
+  for (const match of css.matchAll(CUSTOM_PROPERTY_RE)) {
+    allNamedProps.set(match[1], match[2].trim());
+  }
+
+  const sizeControl = allNamedProps.get('size-control');
+  if (sizeControl === undefined) {
+    issues.push({
+      file: tokensCssRelative,
+      line: 1,
+      message: 'size token --size-control missing; required value is 32px',
+    });
+  } else if (sizeControl !== '32px') {
+    issues.push({
+      file: tokensCssRelative,
+      line: 1,
+      message: `size token --size-control must be 32px (found ${sizeControl})`,
+    });
+  }
+
+  const sizeControlHit = allNamedProps.get('size-control-hit');
+  if (sizeControlHit === undefined) {
+    issues.push({
+      file: tokensCssRelative,
+      line: 1,
+      message: 'size token --size-control-hit missing; required value is 44px',
+    });
+  } else if (sizeControlHit !== '44px') {
+    issues.push({
+      file: tokensCssRelative,
+      line: 1,
+      message: `size token --size-control-hit must be 44px (found ${sizeControlHit})`,
+    });
+  }
+
   const seenUnknown = new Set<string>();
   for (const [name, value] of [...rootProps.entries(), ...darkProps.entries()]) {
     if (!COLOR_VALUE_RE.test(value)) continue;

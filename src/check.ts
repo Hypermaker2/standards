@@ -2,9 +2,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { checkCiWorkflow } from './checkCi.ts';
 import { checkConfigs } from './checkConfigs.ts';
+import { checkControlSize } from './checkControlSize.ts';
 import { checkEnvReads } from './checkEnvReads.ts';
+import { checkLocalChecks } from './checkLocalChecks.ts';
 import { checkNoComments } from './checkNoComments.ts';
 import { checkNoFallbacks } from './checkNoFallbacks.ts';
+import { checkNoSkeletons } from './checkNoSkeletons.ts';
 import { checkProjectLayer } from './checkProjectLayer.ts';
 import { checkRadius } from './checkRadius.ts';
 import { checkScripts } from './checkScripts.ts';
@@ -175,6 +178,12 @@ function checkBunTsProfile(
   );
   if (config.design) {
     issues.push(...rebaseIssues(checkRadius({ projectRoot: absoluteRoot }), entry.root));
+    issues.push(...rebaseIssues(checkNoSkeletons({ projectRoot: absoluteRoot }), entry.root));
+    const uiRoot =
+      entry.uiRoot ?? (entry.root === '.' ? config.uiRoot : undefined) ?? config.uiRoot;
+    issues.push(
+      ...rebaseIssues(checkControlSize({ projectRoot: absoluteRoot, uiRoot }), entry.root)
+    );
   }
   return issues;
 }
@@ -211,6 +220,7 @@ export function checkProject(projectRoot: string, config: StandardsConfig): Chec
 
   issues.push(...checkNestedConsumerConflicts(projectRoot, config.profiles));
   issues.push(...checkSingleAgentsFile(projectRoot));
+  issues.push(...checkLocalChecks({ projectRoot, localChecks: config.localChecks }));
   issues.push(
     ...checkProjectLayer({
       projectRoot,

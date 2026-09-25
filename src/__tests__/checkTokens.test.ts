@@ -50,7 +50,9 @@ const LIGHT_ROLES = `  --background: oklch(1 0 0);
   --radius-container: calc(var(--radius) * 2);
   --radius-sheet: calc(var(--radius) * 2.5);
   --radius-full: 9999px;
-  --radius-none: 0;`;
+  --radius-none: 0;
+  --size-control: 32px;
+  --size-control-hit: 44px;`;
 
 const DARK_ROLES = `  --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
@@ -215,6 +217,8 @@ ${DARK_ROLES}
   --radius-sheet: calc(var(--radius) * 2.5);
   --radius-full: 9999px;
   --radius-none: 0;
+  --size-control: 32px;
+  --size-control-hit: 44px;
 }
 
 .dark {
@@ -232,6 +236,29 @@ ${DARK_ROLES}
     fs.writeFileSync(path.join(root, relative), broken);
     const issues = checkTokens(root, relative);
     expect(issues.some((issue) => issue.message.includes('--radius-sheet'))).toBe(true);
+  });
+
+  it('fails when size-control has the wrong value', () => {
+    const root = makeScratch();
+    const relative = 'tokens.css';
+    const broken = VALID.replace('--size-control: 32px', '--size-control: 40px');
+    fs.writeFileSync(path.join(root, relative), broken);
+    const issues = checkTokens(root, relative);
+    expect(
+      issues.some(
+        (issue) =>
+          issue.message.includes('--size-control') && issue.message.includes('must be 32px')
+      )
+    ).toBe(true);
+  });
+
+  it('fails when size-control-hit is missing', () => {
+    const root = makeScratch();
+    const relative = 'tokens.css';
+    const broken = VALID.replace('  --size-control-hit: 44px;\n', '');
+    fs.writeFileSync(path.join(root, relative), broken);
+    const issues = checkTokens(root, relative);
+    expect(issues.some((issue) => issue.message.includes('--size-control-hit'))).toBe(true);
   });
 
   it('counts radius roles defined in @theme', () => {

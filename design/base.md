@@ -5,7 +5,7 @@ Rules for UI. When rules conflict, protect them in this order:
 1. Accessibility and both themes readable.
 2. Semantic tokens and shared primitives over one-off styling.
 3. Neutral chrome; color is for status only.
-4. Density that matches the layout (desktop 32px / touch 44px).
+4. One control height (32px) on all viewports; touch gets a 44px hit area from the shared primitives, not a taller control.
 5. Motion that explains a change; never decoration.
 6. Surfaces and borders only when earned.
 
@@ -16,9 +16,10 @@ If shipped chrome disagrees with a rule here, update this document or ask.
 - Read first. Content is a document. Chrome is furniture.
 - Neutral chrome. Charcoal dark, white or pale gray light. Reserve color for semantic status.
 - Semantic tokens own color. Features never pick a palette or raw hex.
-- Density follows layout. Desktop controls are 32px. Touch keeps 44px targets.
+- One control height, 32px, on all viewports; touch gets a 44px hit area from the shared primitives, not a taller control.
 - Motion explains. State changes and panel open/close; no ornament.
 - Accessibility is structural. Focus, names, and contrast are part of the design, not polish.
+- No loading skeletons; show cached data or the real shell, with a spinner only after ~400ms.
 
 ## Type
 
@@ -32,6 +33,8 @@ If shipped chrome disagrees with a rule here, update this document or ask.
 - Corner radius uses roles derived from one `--radius` knob: `tight` = max(2px, radius − 4px), `control` = radius, `inset` = radius + 4px, `container` = radius × 2, `sheet` = radius × 2.5, `full` for capsules/circles only, `none` for flush chrome. Do not invent one-off radii.
 - A shape nested inside another uses radius = outer radius − gap, never below 2px.
 - Pill shapes (`rounded-full`) only for intentionally circular or capsule controls; never text buttons, cards, panels, or static labels.
+- Standalone inputs use `control`. Embedded borderless editors stay square; the outer container owns the radius.
+- Circular icon buttons stay circles.
 
 ## Token roles
 
@@ -84,7 +87,7 @@ A fill must read in both themes. A faint hover wash is too weak as a selected or
 
 - Hover: muted wash or icon tone shift; interruptible.
 - Focus-visible: ring via the `ring` role; never invent a second focus language. Put the focus ring on the whole interactive row, never the inner textbox alone when the row already owns focus chrome.
-- Selected: solid secondary or accent fill that works in both themes.
+- Selected: solid secondary or accent fill that works in both themes. Selected tabs may use an underline without a fill.
 - Editing: soft secondary fill, not a heavier card.
 - Disabled: reduced opacity or muted icon; still layout-stable.
 - Dragging: same density as the resting control; no decorative elevation.
@@ -101,14 +104,16 @@ A fill must read in both themes. A faint hover wash is too weak as a selected or
 - Borders or nested cards to fix weak hierarchy.
 - Textbox focus rings inside composite rows that already show focus.
 - Raw hex or ad-hoc palette in feature files.
+- Loading skeletons or `animate-pulse` placeholders.
 - Product-behavior essays in this file. Code and tests own behavior.
 
 ## Review checklist
 
 - [ ] Light and dark both readable; state fills visible in both.
-- [ ] Mobile width checked; touch targets adequate.
+- [ ] Mobile width checked; touch hit areas are 44px without taller controls.
 - [ ] Keyboard focus-visible is obvious; no missing names.
-- [ ] Density matches the layout (compact figures vs comfortable editors).
+- [ ] One 32px control height; no height overrides on shared controls.
+- [ ] No loading skeletons; cached data or real shell, spinner only after ~400ms.
 - [ ] Tokens and shared primitives used; no one-off color.
 
 ## Where it lives

@@ -36,21 +36,23 @@ bunx standards check
 
 ## standards.json keys
 
-| Key                    | Default                       | Purpose                                                                                                          |
-| ---------------------- | ----------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `profile`              | (or use `profiles`)           | single-profile shorthand: `bun-ts` or `python` (means `[{ profile, root: "." }]`)                                |
-| `profiles`             | unset                         | array of `{ profile, root, ... }`; use for mixed repos with one root `AGENTS.md`                                 |
-| `design`               | required for single-profile   | whether root `DESIGN.md` and token checks run; may also be set on a profile entry                                |
-| `tokensCss`            | unset                         | path to tokens.css when design is true (repo-relative at top level, or profile-root-relative on a profile entry) |
-| `commentExempt`        | `[]`                          | path prefixes skipped by the comment scanner (profile-relative when set on a profile entry)                      |
-| `extraRoles`           | `[]`                          | additional token roles allowed beyond the package list                                                           |
-| `fallbackExempt`       | `[]`                          | path prefixes skipped by the no-fallbacks check                                                                  |
-| `configModules`        | unset                         | files allowed to read env keys; must export parsed values only                                                   |
-| `envReadExempt`        | `[]`                          | path prefixes skipped by the env-read check                                                                      |
-| `effectWrappers`       | unset (ban everywhere)        | files allowed to call `useEffect`                                                                                |
-| `tscAllowed`           | `[]`                          | workspace directories allowed to keep `tsc` in scripts                                                           |
-| `ci`                   | `false`                       | when true and any bun-ts profile exists, sync writes root CI workflow + `.bun-version`                           |
-| `projectLayerMaxLines` | `{ agents: 100, design: 40 }` | optional budgets for non-blank project-layer lines after `standards:end`                                         |
+| Key                    | Default                             | Purpose                                                                                                          |
+| ---------------------- | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `profile`              | (or use `profiles`)                 | single-profile shorthand: `bun-ts` or `python` (means `[{ profile, root: "." }]`)                                |
+| `profiles`             | unset                               | array of `{ profile, root, ... }`; use for mixed repos with one root `AGENTS.md`                                 |
+| `design`               | required for single-profile         | whether root `DESIGN.md` and token checks run; may also be set on a profile entry                                |
+| `tokensCss`            | unset                               | path to tokens.css when design is true (repo-relative at top level, or profile-root-relative on a profile entry) |
+| `commentExempt`        | `[]`                                | path prefixes skipped by the comment scanner (profile-relative when set on a profile entry)                      |
+| `extraRoles`           | `[]`                                | additional token roles allowed beyond the package list                                                           |
+| `fallbackExempt`       | `[]`                                | path prefixes skipped by the no-fallbacks check                                                                  |
+| `configModules`        | unset                               | files allowed to read env keys; must export parsed values only                                                   |
+| `envReadExempt`        | `[]`                                | path prefixes skipped by the env-read check                                                                      |
+| `effectWrappers`       | unset (ban everywhere)              | files allowed to call `useEffect`                                                                                |
+| `tscAllowed`           | `[]`                                | workspace directories allowed to keep `tsc` in scripts                                                           |
+| `localChecks`          | `{}`                                | map of `scripts/check-*.ts` path → one-line reason the check is project-only; undeclared local checks fail       |
+| `uiRoot`               | `frontend/src/shared/components/ui` | optional path to shared UI primitives for the control-size check (profile-relative when set on a profile)        |
+| `ci`                   | `false`                             | when true and any bun-ts profile exists, sync writes root CI workflow + `.bun-version`                           |
+| `projectLayerMaxLines` | `{ agents: 100, design: 40 }`       | optional budgets for non-blank project-layer lines after `standards:end`                                         |
 
 ## Mixed repos
 

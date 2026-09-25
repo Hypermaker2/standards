@@ -18,6 +18,7 @@ export type ProfileEntry = {
   envReadExempt?: string[];
   effectWrappers?: string[];
   tscAllowed?: string[];
+  uiRoot?: string;
 };
 
 export type StandardsConfig = {
@@ -31,6 +32,8 @@ export type StandardsConfig = {
   envReadExempt?: string[];
   effectWrappers?: string[];
   tscAllowed?: string[];
+  localChecks?: Record<string, string>;
+  uiRoot?: string;
   ci?: boolean;
   projectLayerMaxLines?: {
     agents?: number;
@@ -62,6 +65,22 @@ function optionalStringArray(value: unknown, key: string): string[] | undefined 
   return value as string[];
 }
 
+function optionalStringRecord(value: unknown, key: string): Record<string, string> | undefined {
+  if (value === undefined) return undefined;
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error(`standards.json ${key} must be an object of string reasons`);
+  }
+  const record = value as Record<string, unknown>;
+  const result: Record<string, string> = {};
+  for (const [entryKey, entryValue] of Object.entries(record)) {
+    if (typeof entryValue !== 'string') {
+      throw new Error(`standards.json ${key}["${entryKey}"] must be a string reason`);
+    }
+    result[entryKey] = entryValue;
+  }
+  return result;
+}
+
 function normalizeRoot(root: string): string {
   if (root === '.' || root === './' || root === '') return '.';
   return root.replace(/^\.\//, '').replace(/\/$/, '');
@@ -84,6 +103,9 @@ function parseProfileEntry(value: unknown, index: number): ProfileEntry {
   if (record.tokensCss !== undefined && typeof record.tokensCss !== 'string') {
     throw new Error(`standards.json profiles[${index}].tokensCss must be a string`);
   }
+  if (record.uiRoot !== undefined && typeof record.uiRoot !== 'string') {
+    throw new Error(`standards.json profiles[${index}].uiRoot must be a string`);
+  }
   return {
     profile: record.profile,
     root: normalizeRoot(record.root),
@@ -96,6 +118,7 @@ function parseProfileEntry(value: unknown, index: number): ProfileEntry {
     envReadExempt: optionalStringArray(record.envReadExempt, `profiles[${index}].envReadExempt`),
     effectWrappers: optionalStringArray(record.effectWrappers, `profiles[${index}].effectWrappers`),
     tscAllowed: optionalStringArray(record.tscAllowed, `profiles[${index}].tscAllowed`),
+    uiRoot: typeof record.uiRoot === 'string' ? record.uiRoot : undefined,
   };
 }
 
@@ -167,8 +190,13 @@ export function loadStandardsConfig(projectRoot: string): StandardsConfig {
         envReadExempt: optionalStringArray(raw.envReadExempt, 'envReadExempt'),
         effectWrappers: optionalStringArray(raw.effectWrappers, 'effectWrappers'),
         tscAllowed: optionalStringArray(raw.tscAllowed, 'tscAllowed'),
+        uiRoot: typeof raw.uiRoot === 'string' ? raw.uiRoot : undefined,
       },
     ];
+  }
+
+  if (raw.uiRoot !== undefined && typeof raw.uiRoot !== 'string') {
+    throw new Error(`standards.json uiRoot must be a string`);
   }
 
   const topDesign = raw.design === true || profiles.some((entry) => entry.design === true);
@@ -192,6 +220,8 @@ export function loadStandardsConfig(projectRoot: string): StandardsConfig {
     envReadExempt: optionalStringArray(raw.envReadExempt, 'envReadExempt'),
     effectWrappers: optionalStringArray(raw.effectWrappers, 'effectWrappers'),
     tscAllowed: optionalStringArray(raw.tscAllowed, 'tscAllowed'),
+    localChecks: optionalStringRecord(raw.localChecks, 'localChecks'),
+    uiRoot: typeof raw.uiRoot === 'string' ? raw.uiRoot : undefined,
     ci: raw.ci === true ? true : raw.ci === false ? false : undefined,
     projectLayerMaxLines: parseProjectLayerMaxLines(raw.projectLayerMaxLines),
   };
