@@ -3,6 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { checkCiWorkflow, syncBunVersion, syncCiWorkflow } from '../checkCi.ts';
+import { loadStandardsConfig } from '../paths.ts';
 import { syncProject } from '../sync.ts';
 
 const scratchDirs: string[] = [];
@@ -26,7 +27,7 @@ describe('checkCi', () => {
       path.join(root, 'standards.json'),
       JSON.stringify({ profile: 'bun-ts', design: false, ci: true }, null, 2)
     );
-    const results = syncProject(root, { profile: 'bun-ts', design: false, ci: true });
+    const results = syncProject(root, loadStandardsConfig(root));
     expect(results.some((result) => result.file.includes('standards.yml'))).toBe(true);
     expect(results.some((result) => result.file === '.bun-version')).toBe(true);
     expect(fs.readFileSync(path.join(root, '.bun-version'), 'utf8').trim()).toMatch(

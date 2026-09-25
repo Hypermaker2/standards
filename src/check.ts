@@ -11,12 +11,17 @@ import { checkSingleAgentsFile } from './checkSingleAgentsFile.ts';
 import { checkSingleTypeScript } from './checkSingleTypeScript.ts';
 import { checkTokens } from './checkTokens.ts';
 import { checkUseEffect } from './checkUseEffect.ts';
-import { expectedAgentsBody, findManagedRegion } from './managedRegion.ts';
+import { expectedAgentsBody, expectedMultiAgentsBody, findManagedRegion } from './managedRegion.ts';
 import {
   formatIssue,
   packageVersion,
+  profileAbsoluteRoot,
+  profileMarker,
   readPackageText,
+  rebaseIssues,
+  resolveTokensCss,
   type CheckIssue,
+  type ProfileEntry,
   type StandardsConfig,
 } from './paths.ts';
 
@@ -78,22 +83,129 @@ function checkManagedDoc(
   return issues;
 }
 
+function agentsBodyFor(config: StandardsConfig): string {
+  const baseMd = readPackageText('agents/base.md');
+  if (config.profiles.length === 1) {
+    return expectedAgentsBody(
+      baseMd,
+      readPackageText(`agents/profile-${config.profiles[0].profile}.md`)
+    );
+  }
+  return expectedMultiAgentsBody(
+    baseMd,
+    config.profiles.map((entry) => ({
+      profileMd: readPackageText(`agents/profile-${entry.profile}.md`),
+      root: entry.root,
+    }))
+  );
+}
+
+function checkNestedConsumerConflicts(projectRoot: string, profiles: ProfileEntry[]): CheckIssue[] {
+  const issues: CheckIssue[] = [];
+  for (const entry of profiles) {
+    if (entry.root === '.') continue;
+    const nestedPath = path.join(entry.root, 'standards.json');
+    if (!fs.existsSync(path.join(projectRoot, nestedPath))) continue;
+    issues.push({
+      file: nestedPath,
+      line: 1,
+      message: `nested standards.json conflicts with root profiles entry for "${entry.root}"; remove the nested consumer`,
+    });
+  }
+  return issues;
+}
+
+function entryField<T>(
+  entry: ProfileEntry,
+  top: T[] | undefined,
+  key: keyof ProfileEntry
+): T[] | undefined {
+  const fromEntry = entry[key] as T[] | undefined;
+  if (fromEntry !== undefined) return fromEntry;
+  if (entry.root === '.') return top;
+  return undefined;
+}
+
+function checkBunTsProfile(
+  projectRoot: string,
+  entry: ProfileEntry,
+  config: StandardsConfig
+): CheckIssue[] {
+  const absoluteRoot = profileAbsoluteRoot(projectRoot, entry);
+  const issues: CheckIssue[] = [];
+  issues.push(...rebaseIssues(checkConfigs(absoluteRoot, 'bun-ts'), entry.root));
+  issues.push(...rebaseIssues(checkScripts(absoluteRoot, 'bun-ts'), entry.root));
+  issues.push(
+    ...rebaseIssues(
+      checkNoFallbacks({
+        projectRoot: absoluteRoot,
+        fallbackExempt: entryField(entry, config.fallbackExempt, 'fallbackExempt'),
+      }),
+      entry.root
+    )
+  );
+  issues.push(
+    ...rebaseIssues(
+      checkEnvReads({
+        projectRoot: absoluteRoot,
+        configModules: entryField(entry, config.configModules, 'configModules'),
+        envReadExempt: entryField(entry, config.envReadExempt, 'envReadExempt'),
+      }),
+      entry.root
+    )
+  );
+  issues.push(
+    ...rebaseIssues(
+      checkUseEffect({
+        projectRoot: absoluteRoot,
+        effectWrappers: entryField(entry, config.effectWrappers, 'effectWrappers'),
+      }),
+      entry.root
+    )
+  );
+  issues.push(
+    ...rebaseIssues(
+      checkSingleTypeScript({
+        projectRoot: absoluteRoot,
+        tscAllowed: entryField(entry, config.tscAllowed, 'tscAllowed'),
+      }),
+      entry.root
+    )
+  );
+  return issues;
+}
+
+function checkPythonProfile(projectRoot: string, entry: ProfileEntry): CheckIssue[] {
+  const absoluteRoot = profileAbsoluteRoot(projectRoot, entry);
+  return [
+    ...rebaseIssues(checkConfigs(absoluteRoot, 'python'), entry.root),
+    ...rebaseIssues(checkScripts(absoluteRoot, 'python'), entry.root),
+  ];
+}
+
+function mergedCommentExempt(config: StandardsConfig): string[] {
+  const exempt: string[] = [...(config.commentExempt ?? [])];
+  for (const entry of config.profiles) {
+    for (const prefix of entry.commentExempt ?? []) {
+      exempt.push(entry.root === '.' ? prefix : path.join(entry.root, prefix));
+    }
+  }
+  return exempt;
+}
+
 export function checkProject(projectRoot: string, config: StandardsConfig): CheckIssue[] {
   const version = packageVersion();
+  const marker = profileMarker(config.profiles);
   const issues: CheckIssue[] = [];
 
-  const agentsBody = expectedAgentsBody(
-    readPackageText('agents/base.md'),
-    readPackageText(`agents/profile-${config.profile}.md`)
-  );
-  issues.push(...checkManagedDoc(projectRoot, 'AGENTS.md', agentsBody, config.profile, version));
+  issues.push(...checkManagedDoc(projectRoot, 'AGENTS.md', agentsBodyFor(config), marker, version));
 
   if (config.design) {
     const designBody = readPackageText('design/base.md').replace(/\n$/, '');
-    issues.push(...checkManagedDoc(projectRoot, 'DESIGN.md', designBody, config.profile, version));
+    issues.push(...checkManagedDoc(projectRoot, 'DESIGN.md', designBody, marker, version));
   }
 
-  issues.push(...checkConfigs(projectRoot, config.profile));
+  issues.push(...checkNestedConsumerConflicts(projectRoot, config.profiles));
   issues.push(...checkSingleAgentsFile(projectRoot));
   issues.push(
     ...checkProjectLayer({
@@ -102,48 +214,38 @@ export function checkProject(projectRoot: string, config: StandardsConfig): Chec
       projectLayerMaxLines: config.projectLayerMaxLines,
     })
   );
+
+  const hasPython = config.profiles.some((entry) => entry.profile === 'python');
   issues.push(
     ...checkNoComments({
       projectRoot,
-      profile: config.profile,
-      commentExempt: config.commentExempt,
+      profile: hasPython ? 'python' : 'bun-ts',
+      commentExempt: mergedCommentExempt(config),
     })
   );
-  issues.push(...checkScripts(projectRoot, config.profile));
 
-  if (config.profile === 'bun-ts') {
-    issues.push(
-      ...checkNoFallbacks({
-        projectRoot,
-        fallbackExempt: config.fallbackExempt,
-      })
-    );
-    issues.push(
-      ...checkEnvReads({
-        projectRoot,
-        configModules: config.configModules,
-        envReadExempt: config.envReadExempt,
-      })
-    );
-    issues.push(
-      ...checkUseEffect({
-        projectRoot,
-        effectWrappers: config.effectWrappers,
-      })
-    );
-    issues.push(
-      ...checkSingleTypeScript({
-        projectRoot,
-        tscAllowed: config.tscAllowed,
-      })
-    );
-    if (config.ci === true) {
-      issues.push(...checkCiWorkflow(projectRoot));
+  for (const entry of config.profiles) {
+    if (entry.profile === 'bun-ts') {
+      issues.push(...checkBunTsProfile(projectRoot, entry, config));
+    } else {
+      issues.push(...checkPythonProfile(projectRoot, entry));
     }
   }
 
+  if (config.ci === true && config.profiles.some((entry) => entry.profile === 'bun-ts')) {
+    issues.push(...checkCiWorkflow(projectRoot));
+  }
+
   if (config.design) {
-    issues.push(...checkTokens(projectRoot, config.tokensCss as string, config.extraRoles ?? []));
+    const tokens = resolveTokensCss(projectRoot, config);
+    const designEntry = config.profiles.find((entry) => entry.design === true);
+    const extraRoles =
+      designEntry?.extraRoles ??
+      (designEntry?.root === '.' ? config.extraRoles : undefined) ??
+      config.extraRoles ??
+      [];
+    const tokenIssues = checkTokens(projectRoot, tokens.relativePath, extraRoles);
+    issues.push(...tokenIssues);
   }
 
   return issues;

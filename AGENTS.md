@@ -1,5 +1,5 @@
 # Standards
-<!-- standards:begin 1.2.1 bun-ts -->
+<!-- standards:begin 1.3.0 bun-ts -->
 ## Working in this repo
 
 - The block between `standards:begin` and `standards:end` in `AGENTS.md` and `DESIGN.md` is written by `@dino/standards` and is never edited by hand. Change the rule in the standards repository (`Hypermaker2/standards`), release a tag, then bump every consumer: `bun remove @dino/standards && bun add -d github:Hypermaker2/standards#vX.Y.Z && bunx standards sync`. The project layer below the block is the only part edited in this repository.

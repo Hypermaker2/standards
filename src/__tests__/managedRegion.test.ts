@@ -36,4 +36,13 @@ ${buildManagedBlock('1.0.0', 'bun-ts', 'shipped body')}
     expect(region).not.toBeNull();
     expect(region?.body === 'expected body').toBe(false);
   });
+
+  it('accepts a combined multi-profile marker', () => {
+    const text = `# Project
+${buildManagedBlock('1.3.0', 'python+bun-ts', 'shared body')}
+`;
+    const region = findManagedRegion(text);
+    expect(region?.profile).toBe('python+bun-ts');
+    expect(region?.body).toBe('shared body');
+  });
 });

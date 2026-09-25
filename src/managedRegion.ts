@@ -65,3 +65,21 @@ export function applyManagedRegion(
 export function expectedAgentsBody(baseMd: string, profileMd: string): string {
   return `${baseMd.replace(/\n$/, '')}\n\n${profileMd.replace(/\n$/, '')}`;
 }
+
+function profileSectionHeading(profileMd: string, root: string): string {
+  const normalized = profileMd.replace(/\n$/, '');
+  if (root === '.') return normalized;
+  const label = root.endsWith('/') ? root : `${root}/`;
+  return normalized.replace(/^## (.+)$/m, `## $1 (${label})`);
+}
+
+export function expectedMultiAgentsBody(
+  baseMd: string,
+  sections: Array<{ profileMd: string; root: string }>
+): string {
+  const parts = [baseMd.replace(/\n$/, '')];
+  for (const section of sections) {
+    parts.push(profileSectionHeading(section.profileMd, section.root));
+  }
+  return parts.join('\n\n');
+}

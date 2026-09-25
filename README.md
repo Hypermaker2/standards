@@ -9,19 +9,19 @@ Values (token numbers, product rules) stay in each project. This package owns vo
 The GitHub repo is public (Bun resolves `github:` deps via the tarball API).
 
 ```bash
-bun add -d github:Hypermaker2/standards#v1.2.1
+bun add -d github:Hypermaker2/standards#v1.3.0
 ```
 
 ## Consumers
 
-| Repo      | Profile                             |
-| --------- | ----------------------------------- |
-| duet      | bun-ts                              |
-| relay     | bun-ts                              |
-| Framework | bun-ts                              |
-| life      | bun-ts                              |
-| hyperflow | bun-ts (frontend), python (backend) |
-| standards | bun-ts                              |
+| Repo      | Profile                          |
+| --------- | -------------------------------- |
+| duet      | bun-ts                           |
+| relay     | bun-ts                           |
+| Framework | bun-ts                           |
+| life      | bun-ts                           |
+| hyperflow | python root + bun-ts `frontend/` |
+| standards | bun-ts                           |
 
 ## Usage
 
@@ -32,48 +32,77 @@ bunx standards sync
 bunx standards check
 ```
 
-`standards.json` at the project root selects `bun-ts` or `python`, whether design docs and token checks run, and optional keys below. The CLI always operates on the current working directory, not the git root.
+`standards.json` at the repository root selects one or more profiles. The CLI always operates on the current working directory (the repo root for mixed repos).
 
 ## standards.json keys
 
-| Key                    | Default                       | Purpose                                                                                                                    |
-| ---------------------- | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `profile`              | required                      | `bun-ts` or `python`                                                                                                       |
-| `design`               | required                      | whether DESIGN.md and token checks run                                                                                     |
-| `tokensCss`            | unset                         | path to tokens.css when `design` is true                                                                                   |
-| `commentExempt`        | `[]`                          | path prefixes skipped by the comment scanner                                                                               |
-| `extraRoles`           | `[]`                          | additional token roles allowed beyond the package list                                                                     |
-| `fallbackExempt`       | `[]`                          | path prefixes skipped by the no-fallbacks check                                                                            |
-| `configModules`        | unset                         | repo-relative files allowed to read env keys; must export parsed values only, never the raw environment object             |
-| `envReadExempt`        | `[]`                          | path prefixes skipped by the env-read check                                                                                |
-| `effectWrappers`       | unset (ban everywhere)        | repo-relative files allowed to call `useEffect`; each must be a real mount/synced wrapper, not a rename with optional deps |
-| `tscAllowed`           | `[]`                          | workspace directories allowed to keep `tsc` in scripts                                                                     |
-| `ci`                   | `false`                       | when true, sync writes `.github/workflows/standards.yml` and check verifies it                                             |
-| `projectLayerMaxLines` | `{ agents: 100, design: 40 }` | optional per-doc budgets for non-blank project-layer lines after `standards:end`                                           |
+| Key                    | Default                       | Purpose                                                                                                          |
+| ---------------------- | ----------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `profile`              | (or use `profiles`)           | single-profile shorthand: `bun-ts` or `python` (means `[{ profile, root: "." }]`)                                |
+| `profiles`             | unset                         | array of `{ profile, root, ... }`; use for mixed repos with one root `AGENTS.md`                                 |
+| `design`               | required for single-profile   | whether root `DESIGN.md` and token checks run; may also be set on a profile entry                                |
+| `tokensCss`            | unset                         | path to tokens.css when design is true (repo-relative at top level, or profile-root-relative on a profile entry) |
+| `commentExempt`        | `[]`                          | path prefixes skipped by the comment scanner (profile-relative when set on a profile entry)                      |
+| `extraRoles`           | `[]`                          | additional token roles allowed beyond the package list                                                           |
+| `fallbackExempt`       | `[]`                          | path prefixes skipped by the no-fallbacks check                                                                  |
+| `configModules`        | unset                         | files allowed to read env keys; must export parsed values only                                                   |
+| `envReadExempt`        | `[]`                          | path prefixes skipped by the env-read check                                                                      |
+| `effectWrappers`       | unset (ban everywhere)        | files allowed to call `useEffect`                                                                                |
+| `tscAllowed`           | `[]`                          | workspace directories allowed to keep `tsc` in scripts                                                           |
+| `ci`                   | `false`                       | when true and any bun-ts profile exists, sync writes root CI workflow + `.bun-version`                           |
+| `projectLayerMaxLines` | `{ agents: 100, design: 40 }` | optional budgets for non-blank project-layer lines after `standards:end`                                         |
 
 ## Mixed repos
 
-A repo can nest consumers. Example: Python root plus a Bun frontend:
+One repository, one `AGENTS.md`. Declare every stack in root `standards.json` with `profiles`:
 
-```bash
-# repo root
-bunx standards sync --init --profile python
-# frontend/
-cd frontend && bunx standards sync --init --profile bun-ts --design src/styles/tokens.css
+```json
+{
+  "profiles": [
+    { "profile": "python", "root": "." },
+    {
+      "profile": "bun-ts",
+      "root": "frontend",
+      "design": true,
+      "tokensCss": "src/styles/tokens.css",
+      "configModules": ["src/lib/env.ts"],
+      "effectWrappers": ["src/lib/effects.ts"],
+      "commentExempt": ["src/generated", "scripts/fixtures"]
+    }
+  ],
+  "ci": false
+}
 ```
 
-Each directory with a `standards.json` owns its own `AGENTS.md`, optional `DESIGN.md`, and lint configs. Run `sync` / `check` from that directory. The python profile comment scan skips child directories that contain their own `standards.json`.
+Sync writes:
+
+- one managed block in root `AGENTS.md` with marker `standards:begin <version> python+bun-ts` (single-profile markers stay `bun-ts` / `python` with no `+`)
+- base rules once, then each profile section (non-`.` roots get a heading suffix like `(frontend/)`)
+- one root `DESIGN.md` when design is enabled
+- lint configs into each profile root (`.oxlintrc.json` under `frontend/`, `ruff.base.toml` at `.`)
+- bun-ts checks, scripts, knip/audit, env/effects/fallbacks/tokens all resolve under that profile's root; reported paths are repo-relative (`frontend/src/...`)
+- comment scan and the Claude/Cursor shadow-file guard run at the repo root
+
+Do not keep a nested `frontend/standards.json` alongside a `profiles` entry for `frontend`; check fails with a clear conflict message.
+
+### Migrating hyperflow
+
+1. Replace the two consumers with the `profiles` document above (adjust keys to match the current frontend `standards.json`).
+2. Delete `frontend/standards.json`, `frontend/AGENTS.md`, and `frontend/DESIGN.md`.
+3. Move the frontend `DESIGN.md` project layer into root `DESIGN.md`, and the frontend `AGENTS.md` project-layer lines into the root `AGENTS.md` project layer.
+4. Keep a root `package.json` `check` script (hyperflow already delegates to `frontend` and `uv`).
+5. `bun remove @dino/standards && bun add -d github:Hypermaker2/standards#v1.3.0 && bunx standards sync`
 
 ## Ruff
 
-Python sync writes `ruff.base.toml` (package defaults) and, if missing, a `ruff.toml` with `extend = "ruff.base.toml"`. Put project-specific Ruff rules in `ruff.toml`. Remove `[tool.ruff]` from `pyproject.toml` once `ruff.toml` exists.
+Python sync writes `ruff.base.toml` (package defaults) and, if missing, a `ruff.toml` with `extend = "ruff.base.toml"` into the python profile root. Put project-specific Ruff rules in `ruff.toml`. Remove `[tool.ruff]` from `pyproject.toml` once `ruff.toml` exists.
 
 ## What check enforces
 
 - Managed `AGENTS.md` (and `DESIGN.md` when enabled) match this package version and content.
-- Lint config files match the package copies. Bun-ts projects may keep `$schema` and `ignorePatterns` extras.
-- No comments in scanned source.
-- Root scripts (bun-ts) or pyproject + ruff/pytest (python). Bun-ts also requires `knip` and `audit` scripts; `lint` must run knip; `check` or `lint` must run audit.
+- Lint config files match the package copies under each profile root. Bun-ts projects may keep `$schema` and `ignorePatterns` extras.
+- No comments in scanned source (repo-wide).
+- Scripts contract per profile root (bun-ts scripts including knip/audit, or pyproject + ruff/pytest).
 - Token role vocabulary when design is enabled.
 - Bun-ts: no `|| []` / `|| ''` / `|| ""` / `|| undefined` in runtime source (`fallbackExempt` optional).
 - Bun-ts: `process.env` / `import.meta.env` only in `configModules` (plus always-exempt tests, `scripts/`, and config files). Config modules must not return, alias, or spread the raw environment object.
@@ -82,6 +111,7 @@ Python sync writes `ruff.base.toml` (package defaults) and, if missing, a `ruff.
 - Bun-ts with `ci: true`: `.github/workflows/standards.yml` matches the package template and `.bun-version` exists.
 - Project layer of `AGENTS.md` / `DESIGN.md` (non-blank lines after `standards:end`) stays within `projectLayerMaxLines` (defaults 100 / 40); the configured budget is printed on failure.
 - No `CLAUDE.md`, `.claude/CLAUDE.md`, `CLAUDE.local.md`, `.cursorrules`, or `.cursor/rules/` at the consumer root (`AGENTS.md` is the single instruction file for every runtime).
+- No nested `standards.json` under a directory already listed in root `profiles`.
 
 ## Recommended scripts
 
@@ -101,7 +131,7 @@ Set `"ci": true` in `standards.json`, then `bunx standards sync`. That writes:
 - `.github/workflows/standards.yml` (push to main and pull_request, concurrency cancel-in-progress, `oven-sh/setup-bun@v2` with `bun-version-file: .bun-version`, Bun install cache on `bun.lock`, `bun install --frozen-lockfile`, `bun run check`)
 - `.bun-version` with the running Bun version (`Bun.version`) when the file is missing; an existing `.bun-version` is left unchanged
 
-`standards check` verifies the workflow matches the package template byte for byte and that `.bun-version` exists.
+`standards check` verifies the workflow matches the package template byte for byte and that `.bun-version` exists. Mixed repos need a root `package.json` with `check`.
 
 ## Bump a version
 
