@@ -1,0 +1,5 @@
+{
+  "rules": {
+    "vitest/require-mock-type-parameters": "off"
+  }
+}
