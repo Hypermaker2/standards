@@ -10,6 +10,14 @@ Values (token numbers, product rules) stay in each project. This package owns vo
 bun add -d github:Hypermaker2/standards#v1.0.0
 ```
 
+Private clone under Bun 1.3 may 404 on the GitHub tarball API. If that happens:
+
+```bash
+bun add -d git+https://$GITHUB_TOKEN@github.com/Hypermaker2/standards.git#v1.0.0
+```
+
+Use a token with `repo` scope (`gh auth token` works). Then invoke with `bunx --bun standards` so the TypeScript bin runs under Bun.
+
 ## Usage
 
 ```bash
