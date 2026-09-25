@@ -6,6 +6,7 @@ import { isTestLikePath, listProjectFiles, toRelative } from './projectFiles.ts'
 
 const TS_EXTENSIONS = new Set(['.ts', '.tsx']);
 const DEFAULT_UI_ROOT = 'frontend/src/shared/components/ui';
+const CONTROL_COMPONENT_NAMES = new Set(['Button', 'IconButton']);
 const HEIGHT_TOKEN = /(?:^|[\s"'`])(?:h|min-h|max-h|size)-[A-Za-z0-9_[\]().%/,:-]+/g;
 const CLASS_HELPERS = new Set(['cn', 'clsx', 'cva']);
 
@@ -118,7 +119,7 @@ function jsxElementName(nameNode: unknown): string | null {
   return null;
 }
 
-function collectUiLocalNames(program: unknown, uiRoot: string): Set<string> {
+function collectUiControlLocalNames(program: unknown, uiRoot: string): Set<string> {
   const names = new Set<string>();
   walkAst(program, (node) => {
     if (node.type !== 'ImportDeclaration') return;
@@ -126,9 +127,26 @@ function collectUiLocalNames(program: unknown, uiRoot: string): Set<string> {
     if (source?.type !== 'Literal' || typeof source.value !== 'string') return;
     if (!isUiImportSource(source.value, uiRoot)) return;
     for (const specifier of (node.specifiers as Record<string, unknown>[]) ?? []) {
-      if (specifier.type === 'ImportSpecifier' || specifier.type === 'ImportDefaultSpecifier') {
+      if (specifier.type === 'ImportSpecifier') {
+        const imported = specifier.imported as { type?: string; name?: string } | undefined;
         const local = specifier.local as { type?: string; name?: string } | undefined;
-        if (local?.type === 'Identifier' && typeof local.name === 'string') {
+        const importedName =
+          imported?.type === 'Identifier' && typeof imported.name === 'string'
+            ? imported.name
+            : undefined;
+        const localName =
+          local?.type === 'Identifier' && typeof local.name === 'string' ? local.name : undefined;
+        if (importedName && localName && CONTROL_COMPONENT_NAMES.has(importedName)) {
+          names.add(localName);
+        }
+      }
+      if (specifier.type === 'ImportDefaultSpecifier') {
+        const local = specifier.local as { type?: string; name?: string } | undefined;
+        if (
+          local?.type === 'Identifier' &&
+          typeof local.name === 'string' &&
+          CONTROL_COMPONENT_NAMES.has(local.name)
+        ) {
           names.add(local.name);
         }
       }
@@ -147,7 +165,7 @@ function checkFile(
   if (isUnderUiRoot(relativePath, uiRoot)) return [];
   const issues: CheckIssue[] = [];
   const result = parseSync(absolutePath, text, { lang: langFor(absolutePath) });
-  const uiNames = collectUiLocalNames(result.program, uiRoot);
+  const uiNames = collectUiControlLocalNames(result.program, uiRoot);
 
   walkAst(result.program, (node) => {
     if (node.type !== 'JSXOpeningElement') return;
