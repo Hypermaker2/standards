@@ -26,5 +26,15 @@
     "chart-4",
     "chart-5"
   ],
-  "otherRoles": ["radius", "font-sans", "font-heading"]
+  "otherRoles": ["font-sans", "font-heading"],
+  "radiusRoles": [
+    "radius",
+    "radius-tight",
+    "radius-control",
+    "radius-inset",
+    "radius-container",
+    "radius-sheet",
+    "radius-full",
+    "radius-none"
+  ]
 }

@@ -6,6 +6,7 @@ import { readPackageText } from './paths.ts';
 type RolesCatalog = {
   colorRoles: string[];
   otherRoles: string[];
+  radiusRoles: string[];
 };
 
 const COLOR_VALUE_RE = new RegExp('^(?:oklch\\(|hsl\\(|rgb\\(|#|var\\()', 'i');
@@ -218,13 +219,26 @@ function collectThemeProperties(css: string): {
   return { light, dark };
 }
 
+function collectAllCustomPropertyNames(css: string): Set<string> {
+  const names = new Set<string>();
+  for (const match of css.matchAll(CUSTOM_PROPERTY_RE)) {
+    names.add(match[1]);
+  }
+  return names;
+}
+
 export function checkTokens(
   projectRoot: string,
   tokensCssRelative: string,
   extraRoles: string[] = []
 ): CheckIssue[] {
   const roles = loadRoles();
-  const known = new Set([...roles.colorRoles, ...roles.otherRoles, ...extraRoles]);
+  const known = new Set([
+    ...roles.colorRoles,
+    ...roles.otherRoles,
+    ...roles.radiusRoles,
+    ...extraRoles,
+  ]);
   const filePath = path.join(projectRoot, tokensCssRelative);
   const issues: CheckIssue[] = [];
 
@@ -239,6 +253,7 @@ export function checkTokens(
 
   const css = fs.readFileSync(filePath, 'utf8');
   const { light: rootProps, dark: darkProps } = collectThemeProperties(css);
+  const allProps = collectAllCustomPropertyNames(css);
 
   if (rootProps.size === 0) {
     issues.push({
@@ -272,6 +287,15 @@ export function checkTokens(
         message: `color role --${role} missing in .dark`,
       });
     }
+  }
+
+  for (const role of roles.radiusRoles) {
+    if (allProps.has(role)) continue;
+    issues.push({
+      file: tokensCssRelative,
+      line: 1,
+      message: `radius role --${role} missing`,
+    });
   }
 
   const seenUnknown = new Set<string>();

@@ -43,7 +43,14 @@ const LIGHT_ROLES = `  --background: oklch(1 0 0);
   --chart-3: oklch(0.6 0.195 25);
   --chart-4: oklch(0.6 0.133 150);
   --chart-5: oklch(0.6 0.102 75);
-  --radius: 0.625rem;`;
+  --radius: 0.625rem;
+  --radius-tight: calc(var(--radius) - 4px);
+  --radius-control: var(--radius);
+  --radius-inset: calc(var(--radius) + 4px);
+  --radius-container: calc(var(--radius) * 2);
+  --radius-sheet: calc(var(--radius) * 2.5);
+  --radius-full: 9999px;
+  --radius-none: 0;`;
 
 const DARK_ROLES = `  --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
@@ -201,10 +208,60 @@ ${DARK_ROLES}
   --chart-4: oklch(0.6 0.133 150);
   --chart-5: oklch(0.6 0.102 75);
   --radius: 0.625rem;
+  --radius-tight: calc(var(--radius) - 4px);
+  --radius-control: var(--radius);
+  --radius-inset: calc(var(--radius) + 4px);
+  --radius-container: calc(var(--radius) * 2);
+  --radius-sheet: calc(var(--radius) * 2.5);
+  --radius-full: 9999px;
+  --radius-none: 0;
 }
 
 .dark {
 ${DARK_ROLES}
+}
+`;
+    fs.writeFileSync(path.join(root, relative), css);
+    expect(checkTokens(root, relative)).toEqual([]);
+  });
+
+  it('fails when a radius role is missing', () => {
+    const root = makeScratch();
+    const relative = 'tokens.css';
+    const broken = VALID.replace('  --radius-sheet: calc(var(--radius) * 2.5);\n', '');
+    fs.writeFileSync(path.join(root, relative), broken);
+    const issues = checkTokens(root, relative);
+    expect(issues.some((issue) => issue.message.includes('--radius-sheet'))).toBe(true);
+  });
+
+  it('counts radius roles defined in @theme', () => {
+    const root = makeScratch();
+    const relative = 'tokens.css';
+    const css = `:root {
+${LIGHT_ROLES.replace(
+  `  --radius-tight: calc(var(--radius) - 4px);
+  --radius-control: var(--radius);
+  --radius-inset: calc(var(--radius) + 4px);
+  --radius-container: calc(var(--radius) * 2);
+  --radius-sheet: calc(var(--radius) * 2.5);
+  --radius-full: 9999px;
+  --radius-none: 0;`,
+  ''
+)}
+}
+
+.dark {
+${DARK_ROLES}
+}
+
+@theme {
+  --radius-tight: calc(var(--radius) - 4px);
+  --radius-control: var(--radius);
+  --radius-inset: calc(var(--radius) + 4px);
+  --radius-container: calc(var(--radius) * 2);
+  --radius-sheet: calc(var(--radius) * 2.5);
+  --radius-full: 9999px;
+  --radius-none: 0;
 }
 `;
     fs.writeFileSync(path.join(root, relative), css);

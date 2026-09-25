@@ -6,6 +6,7 @@ import { checkEnvReads } from './checkEnvReads.ts';
 import { checkNoComments } from './checkNoComments.ts';
 import { checkNoFallbacks } from './checkNoFallbacks.ts';
 import { checkProjectLayer } from './checkProjectLayer.ts';
+import { checkRadius } from './checkRadius.ts';
 import { checkScripts } from './checkScripts.ts';
 import { checkSingleAgentsFile } from './checkSingleAgentsFile.ts';
 import { checkSingleTypeScript } from './checkSingleTypeScript.ts';
@@ -172,6 +173,9 @@ function checkBunTsProfile(
       entry.root
     )
   );
+  if (config.design) {
+    issues.push(...rebaseIssues(checkRadius({ projectRoot: absoluteRoot }), entry.root));
+  }
   return issues;
 }
 

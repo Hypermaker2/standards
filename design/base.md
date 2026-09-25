@@ -29,8 +29,9 @@ If shipped chrome disagrees with a rule here, update this document or ask.
 ## Spacing and geometry
 
 - Use the Tailwind spacing scale for layout gaps and padding.
-- Corner radius comes from `--radius` (and derived `radius-*` theme aliases). Do not invent one-off radii.
-- Pill shapes (`rounded-full`) only for interactive controls that are intentionally circular or capsule-shaped (icon buttons, switches, segmented thumbs). Never for cards, panels, or static labels.
+- Corner radius uses roles derived from one `--radius` knob: `tight` = radius − 4px, `control` = radius, `inset` = radius + 4px, `container` = radius × 2, `sheet` = radius × 2.5, `full` for capsules/circles only, `none` for flush chrome. Do not invent one-off radii.
+- A shape nested inside another uses radius = outer radius − gap, never below `tight`.
+- Pill shapes (`rounded-full`) only for intentionally circular or capsule controls; never text buttons, cards, panels, or static labels.
 
 ## Token roles
 
@@ -59,7 +60,14 @@ Names live in the project's `tokens.css`. Use the role, not a hard-coded value. 
 | `positive`             | Success / credit status          |
 | `negative`             | Failure / debit status           |
 | `chart-1` .. `chart-5` | Chart series colors              |
-| `radius`               | Base corner radius               |
+| `radius`               | Base corner radius knob          |
+| `radius-tight`         | One step below control           |
+| `radius-control`       | Default interactive control      |
+| `radius-inset`         | Nested inside a container        |
+| `radius-container`     | Cards, menus, dialogs            |
+| `radius-sheet`         | Large sheets and bubbles         |
+| `radius-full`          | Capsules and circles             |
+| `radius-none`          | Flush chrome                     |
 | `font-sans`            | Default UI typeface              |
 | `font-heading`         | Heading typeface                 |
 | `font-mono`            | Monospace typeface (optional)    |

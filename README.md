@@ -9,7 +9,7 @@ Values (token numbers, product rules) stay in each project. This package owns vo
 The GitHub repo is public (Bun resolves `github:` deps via the tarball API).
 
 ```bash
-bun add -d github:Hypermaker2/standards#v1.4.0
+bun add -d github:Hypermaker2/standards#v1.5.0
 ```
 
 ## Consumers
@@ -91,7 +91,7 @@ Do not keep a nested `frontend/standards.json` alongside a `profiles` entry for 
 2. Delete `frontend/standards.json`, `frontend/AGENTS.md`, and `frontend/DESIGN.md`.
 3. Move the frontend `DESIGN.md` project layer into root `DESIGN.md`, and the frontend `AGENTS.md` project-layer lines into the root `AGENTS.md` project layer.
 4. Keep a root `package.json` `check` script (hyperflow already delegates to `frontend` and `uv`).
-5. `bun remove @dino/standards && bun add -d github:Hypermaker2/standards#v1.4.0 && bunx standards sync`
+5. `bun remove @dino/standards && bun add -d github:Hypermaker2/standards#v1.5.0 && bunx standards sync`
 
 ## Ruff
 
@@ -103,7 +103,8 @@ Python sync writes `ruff.base.toml` (package defaults) and, if missing, a `ruff.
 - Lint config files match the package copies under each profile root. Bun-ts projects may keep `$schema` and `ignorePatterns` extras.
 - No comments in scanned source (repo-wide).
 - Scripts contract per profile root (bun-ts scripts including knip/audit, or pyproject + ruff/pytest).
-- Token role vocabulary when design is enabled.
+- Token role vocabulary when design is enabled (including radius roles derived from `--radius`).
+- Bun-ts: no Tailwind numeric / arbitrary / bare `rounded*` classes, no legacy `--radius-(xs|sm|…)` vars, and no raw `border-radius` lengths other than `0` (use role utilities / `var(--radius-<role>)`).
 - Bun-ts: no `|| []` / `|| ''` / `|| ""` / `|| undefined` in runtime source (`fallbackExempt` optional).
 - Bun-ts: `process.env` / `import.meta.env` only in `configModules` (plus always-exempt tests, `scripts/`, and config files). Config modules must not return, alias, or spread the raw environment object.
 - Bun-ts: `useEffect` only in `effectWrappers` (missing key bans it everywhere; tests exempt). Wrapper files must expose `useMountEffect(effect)` calling `useEffect(effect, [])` (or an aliased import with `[]`) and may expose `useSyncedEffect(effect, deps)` with required deps. Optional deps or a `useMountEffect` that accepts deps is a rename and fails.
