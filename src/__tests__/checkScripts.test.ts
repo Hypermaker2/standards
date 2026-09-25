@@ -45,10 +45,12 @@ describe('checkScripts', () => {
             build: 'echo',
             test: 'echo',
             typecheck: 'echo',
-            lint: 'echo',
+            lint: 'oxlint && knip',
             format: 'echo',
             'format:check': 'echo',
-            check: 'echo',
+            check: 'bun run lint && bun run audit',
+            knip: 'knip',
+            audit: 'bun audit --audit-level=high',
           },
         },
         null,
@@ -56,6 +58,35 @@ describe('checkScripts', () => {
       )
     );
     expect(checkScripts(root, 'bun-ts')).toEqual([]);
+  });
+
+  it('requires knip in lint and audit in check or lint', () => {
+    const root = makeScratch();
+    fs.writeFileSync(
+      path.join(root, 'package.json'),
+      JSON.stringify(
+        {
+          name: 'demo',
+          scripts: {
+            dev: 'echo',
+            build: 'echo',
+            test: 'echo',
+            typecheck: 'echo',
+            lint: 'oxlint',
+            format: 'echo',
+            'format:check': 'echo',
+            check: 'bun run lint',
+            knip: 'knip',
+            audit: 'bun audit --audit-level=high',
+          },
+        },
+        null,
+        2
+      )
+    );
+    const messages = checkScripts(root, 'bun-ts').map((issue) => issue.message);
+    expect(messages).toContain('script "lint" must include knip');
+    expect(messages).toContain('script "check" or "lint" must include audit');
   });
 
   it('requires pyproject.toml with ruff and pytest for python', () => {

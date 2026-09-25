@@ -1,12 +1,14 @@
 # Standards
-<!-- standards:begin 1.0.3 bun-ts -->
+<!-- standards:begin 1.1.0 bun-ts -->
 ## Code rules
 
+- Repository invariants are executable checks that run inside `lint` (a `scripts/check-*.ts` with a colocated test), never review conventions. When a legitimate new pattern needs an exception, change the check in the same change; do not disable it.
 - Optimize for readability and skimmability. Avoid cleverness; prefer early returns.
 - No comments in code. Names and structure say what code does; a test says why a non-obvious behavior must hold. Put history and external references in commit messages or docs. `bun run lint` fails on any comment.
 - No backward compatibility: one app, one codebase. Evolve types and interfaces and update all callers together, no shims or fallbacks.
 - Fail fast on broken invariants: throw instead of returning null or empty placeholders from typed paths. Never swallow errors: recover deliberately or rethrow with context.
 - Write the happy path. Guard only untrusted external data (network responses, user input, localStorage). No defensive `?.`, `??`, or `if (!x) return` for values your own typed code produced.
+- All runtime configuration is parsed through a typed schema at boot, in one config module per runtime. Application code reads the parsed config object, never the environment directly. Misconfiguration fails at startup.
 - Keep it simple. Handle the important cases, no enterprise-style code. Ask whether 80% of the value can ship with less code.
 - Ask a structured multiple-choice question when a request is materially ambiguous; otherwise assume a low-risk default, state it, and continue.
 
@@ -25,6 +27,7 @@
 ## Docs
 
 - `docs/` holds only what code cannot show: setup and operations, external constraints. Behavior lives in code and tests; review and test reports are not kept as docs.
+- `docs/decisions/` holds numbered architecture decision records (Status, Context, Decision, Rationale, Consequences, Rejected alternative) for durable decisions the code cannot show. `plans/` holds finite work; delete a plan when its acceptance criteria are met. Docs never hold file inventories, versions, route lists, environment values or benchmark snapshots.
 
 ## Build and verification
 
@@ -39,10 +42,23 @@
 
 ## Bun / TypeScript stack
 
-- Bun for everything (`bun install`, `bun run`). oxlint for lint, oxfmt for format, tsgo (`@typescript/native-preview`) for typecheck, Vitest for tests.
-- Root `package.json` scripts: `dev`, `build`, `test`, `typecheck`, `lint`, `format`, `format:check`, `check`.
+- Bun for everything (`bun install`, `bun run`). oxlint for lint, oxfmt for format, tsgo (`@typescript/native-preview`) for typecheck, Vitest for tests. knip for unused dependencies, exports, and files. `bun audit` fails on high or critical advisories. Both knip and audit run in `lint` / `check`.
+- One TypeScript: `tsgo` from `@typescript/native-preview` is the only TypeScript. No `tsc` in scripts or CI, no `typescript@5` or `@6` in the lockfile. Emit through `tsgo` or `bun build`.
+- Root `package.json` scripts: `dev`, `build`, `test`, `typecheck`, `lint`, `format`, `format:check`, `check`, `knip`, `audit`.
 - When applicable, monorepo shape: `shared/`, `frontend/`, `backend/`. Shared types in `shared/src`; never duplicate a type across the boundary.
 - Frontend: React 19 functional components with typed props; Vite; Tailwind v4 with tokens in a single `tokens.css` `@theme` file.
+- Never call `useEffect` directly. Prefer one of these replacements; wrapper hook files are the only allowed callers of `useEffect`:
+
+| Instead of useEffect for            | Use                      |
+| ----------------------------------- | ------------------------ |
+| Deriving state from props or state  | Compute inline           |
+| Fetching data                       | TanStack Query           |
+| Responding to user actions          | Event handlers           |
+| One-time external sync on mount     | `useMountEffect` wrapper |
+| Resetting state when a prop changes | `key` on the component   |
+
+- Features import queries and services, never the HTTP client. Responses are parsed once, at the client boundary, against the shared schemas.
+- Class composition: `cn` from the `cn` package; `cva` only as a recorded deviation.
 - Base UI via `@base-ui/react` (shadcn `base-nova` style). Components are owned in the repo under `shared/components/ui`, not a dependency to work around.
 - TanStack Query for server state. Express 5 backend. SQLite persistence. zod at untrusted boundaries.
 - Icons from a local icons module; no icon packages in feature files.
@@ -62,6 +78,7 @@
 | `oxlint` / `oxfmt`           | Lint and format                       |
 | `@typescript/native-preview` | Typecheck (`tsgo`)                    |
 | `vitest`                     | Tests                                 |
+| `knip`                       | Unused dependencies, exports, files   |
 | `concurrently`               | Run multiple dev servers together     |
 
 Anything outside this list is recorded in the project layer of `AGENTS.md` with a one-line reason.

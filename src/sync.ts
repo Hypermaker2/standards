@@ -1,15 +1,16 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { syncCiWorkflow } from './checkCi.ts';
 import { syncConfigs } from './checkConfigs.ts';
 import { applyManagedRegion, expectedAgentsBody } from './managedRegion.ts';
 import { packageVersion, readPackageText, type Profile, type StandardsConfig } from './paths.ts';
 
-export type SyncInitOptions = {
+type SyncInitOptions = {
   profile: Profile;
   design?: string;
 };
 
-export type SyncResult = {
+type SyncResult = {
   file: string;
   status: 'written' | 'unchanged';
 };
@@ -78,5 +79,10 @@ export function syncProject(projectRoot: string, config: StandardsConfig): SyncR
   }
 
   results.push(...syncConfigs(projectRoot, config.profile));
+
+  if (config.profile === 'bun-ts' && config.ci === true) {
+    results.push(syncCiWorkflow(projectRoot));
+  }
+
   return results;
 }

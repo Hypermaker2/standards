@@ -1,7 +1,7 @@
 const BEGIN_RE = /<!-- standards:begin ([^\s]+) ([^\s]+) -->/;
 const END_MARKER = '<!-- standards:end -->';
 
-export type ManagedRegion = {
+type ManagedRegion = {
   version: string;
   profile: string;
   body: string;
@@ -9,11 +9,11 @@ export type ManagedRegion = {
   end: number;
 };
 
-export function beginMarker(version: string, profile: string): string {
+function beginMarker(version: string, profile: string): string {
   return `<!-- standards:begin ${version} ${profile} -->`;
 }
 
-export function endMarker(): string {
+function endMarker(): string {
   return END_MARKER;
 }
 

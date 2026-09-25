@@ -3,7 +3,7 @@ import path from 'node:path';
 import type { CheckIssue } from './paths.ts';
 import { readPackageText } from './paths.ts';
 
-export type RolesCatalog = {
+type RolesCatalog = {
   colorRoles: string[];
   otherRoles: string[];
 };
@@ -208,7 +208,7 @@ function scanCss(css: string, light: Map<string, string>, dark: Map<string, stri
   }
 }
 
-export function collectThemeProperties(css: string): {
+function collectThemeProperties(css: string): {
   light: Map<string, string>;
   dark: Map<string, string>;
 } {

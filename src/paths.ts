@@ -12,6 +12,12 @@ export type StandardsConfig = {
   tokensCss?: string;
   commentExempt?: string[];
   extraRoles?: string[];
+  fallbackExempt?: string[];
+  configModules?: string[];
+  envReadExempt?: string[];
+  effectWrappers?: string[];
+  tscAllowed?: string[];
+  ci?: boolean;
 };
 
 export type CheckIssue = {
@@ -19,10 +25,6 @@ export type CheckIssue = {
   line: number;
   message: string;
 };
-
-export function packageRoot(): string {
-  return PACKAGE_ROOT;
-}
 
 export function packageVersion(): string {
   const raw = fs.readFileSync(path.join(PACKAGE_ROOT, 'package.json'), 'utf8');
@@ -32,6 +34,14 @@ export function packageVersion(): string {
 
 export function readPackageText(relativePath: string): string {
   return fs.readFileSync(path.join(PACKAGE_ROOT, relativePath), 'utf8');
+}
+
+function optionalStringArray(value: unknown, key: string): string[] | undefined {
+  if (value === undefined) return undefined;
+  if (!Array.isArray(value) || value.some((entry) => typeof entry !== 'string')) {
+    throw new Error(`standards.json ${key} must be an array of strings`);
+  }
+  return value as string[];
 }
 
 export function loadStandardsConfig(projectRoot: string): StandardsConfig {
@@ -51,7 +61,19 @@ export function loadStandardsConfig(projectRoot: string): StandardsConfig {
   if (parsed.design && (typeof parsed.tokensCss !== 'string' || parsed.tokensCss.length === 0)) {
     throw new Error(`standards.json tokensCss is required when design is true`);
   }
-  return parsed;
+  if (parsed.ci !== undefined && typeof parsed.ci !== 'boolean') {
+    throw new Error(`standards.json ci must be a boolean`);
+  }
+  return {
+    ...parsed,
+    commentExempt: optionalStringArray(parsed.commentExempt, 'commentExempt'),
+    extraRoles: optionalStringArray(parsed.extraRoles, 'extraRoles'),
+    fallbackExempt: optionalStringArray(parsed.fallbackExempt, 'fallbackExempt'),
+    configModules: optionalStringArray(parsed.configModules, 'configModules'),
+    envReadExempt: optionalStringArray(parsed.envReadExempt, 'envReadExempt'),
+    effectWrappers: optionalStringArray(parsed.effectWrappers, 'effectWrappers'),
+    tscAllowed: optionalStringArray(parsed.tscAllowed, 'tscAllowed'),
+  };
 }
 
 export function formatIssue(issue: CheckIssue): string {

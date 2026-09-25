@@ -1,11 +1,8 @@
-import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { parseSync } from 'oxc-parser';
 import type { CheckIssue, Profile } from './paths.ts';
-
-const SKIP_DIR_NAMES = new Set(['node_modules', 'dist', 'coverage', 'output']);
-const DOT_DIR_ALLOWLIST = new Set(['.github', '.agents']);
+import { listProjectFiles } from './projectFiles.ts';
 
 const BUN_EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.mjs', '.css', '.sh']);
 const PYTHON_EXTENSIONS = new Set(['.py', '.ts', '.tsx', '.js', '.mjs', '.css', '.sh']);
@@ -15,118 +12,6 @@ export type CommentScanOptions = {
   profile: Profile;
   commentExempt?: string[];
 };
-
-function isExempt(relativePath: string, exempt: string[]): boolean {
-  return exempt.some(
-    (prefix) => relativePath === prefix || relativePath.startsWith(prefix.replace(/\/?$/, '/'))
-  );
-}
-
-function shouldSkipDirName(name: string): boolean {
-  if (SKIP_DIR_NAMES.has(name)) return true;
-  if (name.startsWith('.') && !DOT_DIR_ALLOWLIST.has(name)) return true;
-  return false;
-}
-
-function pathHasSkippedSegment(relativePath: string): boolean {
-  const segments = relativePath.split(/[\\/]/).filter(Boolean);
-  for (let index = 0; index < segments.length - 1; index += 1) {
-    if (shouldSkipDirName(segments[index])) return true;
-  }
-  return false;
-}
-
-function isUnderNestedStandards(projectRoot: string, relativePath: string): boolean {
-  const segments = relativePath.split(/[\\/]/).filter(Boolean);
-  for (let index = 1; index < segments.length; index += 1) {
-    const dirRel = segments.slice(0, index).join(path.sep);
-    if (fs.existsSync(path.join(projectRoot, dirRel, 'standards.json'))) {
-      return true;
-    }
-  }
-  return false;
-}
-
-function collectFilesWalk(
-  dir: string,
-  projectRoot: string,
-  extensions: Set<string>,
-  exempt: string[],
-  skipNestedStandards: boolean,
-  out: string[]
-): void {
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    if (entry.name === '.' || entry.name === '..') continue;
-    const fullPath = path.join(dir, entry.name);
-    const relativePath = path.relative(projectRoot, fullPath);
-    if (entry.isDirectory()) {
-      if (shouldSkipDirName(entry.name)) continue;
-      if (isExempt(relativePath + '/', exempt) || isExempt(relativePath, exempt)) continue;
-      if (skipNestedStandards && fs.existsSync(path.join(fullPath, 'standards.json'))) {
-        continue;
-      }
-      collectFilesWalk(fullPath, projectRoot, extensions, exempt, skipNestedStandards, out);
-      continue;
-    }
-    if (!extensions.has(path.extname(entry.name))) continue;
-    if (isExempt(relativePath, exempt)) continue;
-    out.push(fullPath);
-  }
-}
-
-function listGitFiles(projectRoot: string): string[] | null {
-  const result = spawnSync(
-    'git',
-    ['-C', projectRoot, 'ls-files', '--cached', '--others', '--exclude-standard', '-z'],
-    { encoding: 'buffer', maxBuffer: 64 * 1024 * 1024 }
-  );
-  if (result.status !== 0 || result.stdout === null) return null;
-  const raw = Buffer.isBuffer(result.stdout) ? result.stdout : Buffer.from(result.stdout);
-  if (raw.length === 0) return [];
-  const parts = raw.toString('utf8').split('\0');
-  if (parts.length > 0 && parts[parts.length - 1] === '') {
-    parts.pop();
-  }
-  return parts;
-}
-
-function collectFiles(
-  projectRoot: string,
-  extensions: Set<string>,
-  exempt: string[],
-  skipNestedStandards: boolean
-): string[] {
-  const out: string[] = [];
-  const gitFiles = listGitFiles(projectRoot);
-  if (gitFiles !== null) {
-    for (const relativePath of gitFiles) {
-      if (!extensions.has(path.extname(relativePath))) continue;
-      if (pathHasSkippedSegment(relativePath)) continue;
-      if (isExempt(relativePath, exempt)) continue;
-      if (skipNestedStandards && isUnderNestedStandards(projectRoot, relativePath)) continue;
-      out.push(path.join(projectRoot, relativePath));
-    }
-    return out;
-  }
-
-  for (const entry of fs.readdirSync(projectRoot, { withFileTypes: true })) {
-    if (!entry.isDirectory()) {
-      const ext = path.extname(entry.name);
-      if (!extensions.has(ext)) continue;
-      const relativePath = entry.name;
-      if (isExempt(relativePath, exempt)) continue;
-      out.push(path.join(projectRoot, entry.name));
-      continue;
-    }
-    if (shouldSkipDirName(entry.name)) continue;
-    const fullPath = path.join(projectRoot, entry.name);
-    if (skipNestedStandards && fs.existsSync(path.join(fullPath, 'standards.json'))) {
-      continue;
-    }
-    collectFilesWalk(fullPath, projectRoot, extensions, exempt, skipNestedStandards, out);
-  }
-  return out;
-}
 
 function lineOf(text: string, pos: number): number {
   return text.slice(0, pos).split('\n').length;
@@ -212,9 +97,12 @@ function checkFile(filePath: string, projectRoot: string): CheckIssue[] {
 
 export function checkNoComments(options: CommentScanOptions): CheckIssue[] {
   const extensions = options.profile === 'python' ? PYTHON_EXTENSIONS : BUN_EXTENSIONS;
-  const exempt = options.commentExempt ?? [];
-  const skipNestedStandards = options.profile === 'python';
-  const files = collectFiles(options.projectRoot, extensions, exempt, skipNestedStandards);
+  const files = listProjectFiles({
+    projectRoot: options.projectRoot,
+    extensions,
+    exempt: options.commentExempt ?? [],
+    skipNestedStandards: options.profile === 'python',
+  });
   files.sort();
   return files.flatMap((filePath) => checkFile(filePath, options.projectRoot));
 }

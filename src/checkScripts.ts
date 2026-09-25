@@ -11,6 +11,8 @@ const BUN_SCRIPTS = [
   'format',
   'format:check',
   'check',
+  'knip',
+  'audit',
 ] as const;
 
 export function checkScripts(projectRoot: string, profile: Profile): CheckIssue[] {
@@ -43,6 +45,22 @@ function checkBunScripts(projectRoot: string): CheckIssue[] {
         message: `missing script "${name}"`,
       });
     }
+  }
+  const lint = scripts.lint ?? '';
+  if (lint.length > 0 && !lint.includes('knip')) {
+    issues.push({
+      file: 'package.json',
+      line: 1,
+      message: 'script "lint" must include knip',
+    });
+  }
+  const check = scripts.check ?? '';
+  if (check.length > 0 && !check.includes('audit') && !lint.includes('audit')) {
+    issues.push({
+      file: 'package.json',
+      line: 1,
+      message: 'script "check" or "lint" must include audit',
+    });
   }
   return issues;
 }

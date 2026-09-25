@@ -1,10 +1,12 @@
 ## Code rules
 
+- Repository invariants are executable checks that run inside `lint` (a `scripts/check-*.ts` with a colocated test), never review conventions. When a legitimate new pattern needs an exception, change the check in the same change; do not disable it.
 - Optimize for readability and skimmability. Avoid cleverness; prefer early returns.
 - No comments in code. Names and structure say what code does; a test says why a non-obvious behavior must hold. Put history and external references in commit messages or docs. `bun run lint` fails on any comment.
 - No backward compatibility: one app, one codebase. Evolve types and interfaces and update all callers together, no shims or fallbacks.
 - Fail fast on broken invariants: throw instead of returning null or empty placeholders from typed paths. Never swallow errors: recover deliberately or rethrow with context.
 - Write the happy path. Guard only untrusted external data (network responses, user input, localStorage). No defensive `?.`, `??`, or `if (!x) return` for values your own typed code produced.
+- All runtime configuration is parsed through a typed schema at boot, in one config module per runtime. Application code reads the parsed config object, never the environment directly. Misconfiguration fails at startup.
 - Keep it simple. Handle the important cases, no enterprise-style code. Ask whether 80% of the value can ship with less code.
 - Ask a structured multiple-choice question when a request is materially ambiguous; otherwise assume a low-risk default, state it, and continue.
 
@@ -23,6 +25,7 @@
 ## Docs
 
 - `docs/` holds only what code cannot show: setup and operations, external constraints. Behavior lives in code and tests; review and test reports are not kept as docs.
+- `docs/decisions/` holds numbered architecture decision records (Status, Context, Decision, Rationale, Consequences, Rejected alternative) for durable decisions the code cannot show. `plans/` holds finite work; delete a plan when its acceptance criteria are met. Docs never hold file inventories, versions, route lists, environment values or benchmark snapshots.
 
 ## Build and verification
 

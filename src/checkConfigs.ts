@@ -3,7 +3,7 @@ import path from 'node:path';
 import type { CheckIssue, Profile } from './paths.ts';
 import { readPackageText } from './paths.ts';
 
-export const ALLOWED_CONFIG_EXTRA_KEYS = ['$schema', 'ignorePatterns'] as const;
+const ALLOWED_CONFIG_EXTRA_KEYS = ['$schema', 'ignorePatterns'] as const;
 
 const ALLOWED_EXTRA = new Set<string>(ALLOWED_CONFIG_EXTRA_KEYS);
 

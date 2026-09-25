@@ -1,9 +1,14 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { checkCiWorkflow } from './checkCi.ts';
 import { checkConfigs } from './checkConfigs.ts';
+import { checkEnvReads } from './checkEnvReads.ts';
 import { checkNoComments } from './checkNoComments.ts';
+import { checkNoFallbacks } from './checkNoFallbacks.ts';
 import { checkScripts } from './checkScripts.ts';
+import { checkSingleTypeScript } from './checkSingleTypeScript.ts';
 import { checkTokens } from './checkTokens.ts';
+import { checkUseEffect } from './checkUseEffect.ts';
 import { expectedAgentsBody, findManagedRegion } from './managedRegion.ts';
 import {
   formatIssue,
@@ -95,6 +100,37 @@ export function checkProject(projectRoot: string, config: StandardsConfig): Chec
     })
   );
   issues.push(...checkScripts(projectRoot, config.profile));
+
+  if (config.profile === 'bun-ts') {
+    issues.push(
+      ...checkNoFallbacks({
+        projectRoot,
+        fallbackExempt: config.fallbackExempt,
+      })
+    );
+    issues.push(
+      ...checkEnvReads({
+        projectRoot,
+        configModules: config.configModules,
+        envReadExempt: config.envReadExempt,
+      })
+    );
+    issues.push(
+      ...checkUseEffect({
+        projectRoot,
+        effectWrappers: config.effectWrappers,
+      })
+    );
+    issues.push(
+      ...checkSingleTypeScript({
+        projectRoot,
+        tscAllowed: config.tscAllowed,
+      })
+    );
+    if (config.ci === true) {
+      issues.push(...checkCiWorkflow(projectRoot));
+    }
+  }
 
   if (config.design) {
     issues.push(...checkTokens(projectRoot, config.tokensCss as string, config.extraRoles ?? []));
