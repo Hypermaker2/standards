@@ -1,12 +1,12 @@
 # Standards
-<!-- standards:begin 1.6.0 bun-ts -->
+<!-- standards:begin 1.7.0 bun-ts -->
 ## Working in this repo
 
 - Managed `standards:begin`/`standards:end` in `AGENTS.md`/`DESIGN.md` is owned by `@dino/standards`; never edit by hand. Change the rule in `Hypermaker2/standards`, release a tag, then `bun remove @dino/standards && bun add -d github:Hypermaker2/standards#vX.Y.Z && bunx standards sync`. Edit only the project layer below.
 - `AGENTS.md` is the only agent instruction file; never add `CLAUDE.md`, `.cursorrules`, or similar (they shadow it and split the rules).
 - Project layers and budgets: `AGENTS.md` (<100 lines) = product (2-3 sentences), domain invariants an agent could break, repo-specific commands beyond the contract, architecture map, dependency deviations, and `standards.json` exceptions (one-line reasons); never behavior descriptions, inventories/changelogs/plans/benchmarks, or anything already in code/tests/`package.json`. `DESIGN.md` (<40 lines) = design rules omitted from the shared set (color roles, density, component constraints); never tokens, screens, or component catalogs. Over budget: move into code, a test, an ADR, or the shared standard.
 - A rule that would hold for any project on this profile goes into the standard, not the project layer; project-only checks are declared in `localChecks` with a reason.
-- Fix the code to pass `bunx standards check` (first in `lint`); never rename, alias, wrap, exempt, or spread the forbidden thing (a forwarding wrapper is the forbidden call). Legitimate new patterns change the check in the standards repo in the same work. Declare exceptions only in `standards.json` (`configModules`, `effectWrappers`, `envReadExempt`, `commentExempt`, `extraRoles`, `tscAllowed`, `fallbackExempt`, `localChecks`) with a one-line project-layer reason; never launder.
+- Fix the code to pass `bunx standards check` (first in `lint`); never rename, alias, wrap, exempt, or spread the forbidden thing (a forwarding wrapper is the forbidden call). Legitimate new patterns change the check in the standards repo in the same work. Declare exceptions only in `standards.json` (`configModules`, `effectWrappers`, `envReadExempt`, `commentExempt`, `extraRoles`, `tscAllowed`, `fallbackExempt`, `httpClientModule`, `localChecks`) with a one-line reason; never launder.
 - Before reporting done, run root `check` (lint, typecheck, tests, format:check, audit) and make it pass; if the brief allows a subset, name skips. Never commit or push unless asked.
 
 ## Code rules

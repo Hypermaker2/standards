@@ -99,7 +99,7 @@ A fill must read in both themes. A faint hover wash is too weak as a selected or
 
 ## Reject list
 
-- Decorative gradients, glows, multi-layer shadows, or purple-on-white defaults.
+- Decorative gradients, glows, multi-layer shadows, arbitrary `shadow-[...]`, inline `box-shadow`/`boxShadow`, or purple-on-white defaults.
 - Badges, pills, or tinted cards for ordinary metadata.
 - Borders or nested cards to fix weak hierarchy.
 - Textbox focus rings inside composite rows that already show focus.

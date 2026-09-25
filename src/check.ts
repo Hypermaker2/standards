@@ -4,13 +4,17 @@ import { checkCiWorkflow } from './checkCi.ts';
 import { checkConfigs } from './checkConfigs.ts';
 import { checkControlSize } from './checkControlSize.ts';
 import { checkEnvReads } from './checkEnvReads.ts';
+import { checkHttpClientImports } from './checkHttpClientImports.ts';
+import { checkIconImports } from './checkIconImports.ts';
 import { checkLocalChecks } from './checkLocalChecks.ts';
 import { checkNoComments } from './checkNoComments.ts';
 import { checkNoFallbacks } from './checkNoFallbacks.ts';
 import { checkNoSkeletons } from './checkNoSkeletons.ts';
 import { checkProjectLayer } from './checkProjectLayer.ts';
 import { checkRadius } from './checkRadius.ts';
+import { checkRawColors } from './checkRawColors.ts';
 import { checkScripts } from './checkScripts.ts';
+import { checkShadows } from './checkShadows.ts';
 import { checkSingleAgentsFile } from './checkSingleAgentsFile.ts';
 import { checkSingleTypeScript } from './checkSingleTypeScript.ts';
 import { checkTokens } from './checkTokens.ts';
@@ -184,6 +188,23 @@ function checkBunTsProfile(
     issues.push(
       ...rebaseIssues(checkControlSize({ projectRoot: absoluteRoot, uiRoot }), entry.root)
     );
+    const httpClientModule =
+      entry.httpClientModule ??
+      (entry.root === '.' ? config.httpClientModule : undefined) ??
+      config.httpClientModule;
+    const tokensCss =
+      entry.tokensCss ?? (entry.root === '.' ? config.tokensCss : undefined) ?? config.tokensCss;
+    issues.push(
+      ...rebaseIssues(
+        checkHttpClientImports({ projectRoot: absoluteRoot, httpClientModule }),
+        entry.root
+      )
+    );
+    issues.push(
+      ...rebaseIssues(checkRawColors({ projectRoot: absoluteRoot, tokensCss }), entry.root)
+    );
+    issues.push(...rebaseIssues(checkIconImports({ projectRoot: absoluteRoot }), entry.root));
+    issues.push(...rebaseIssues(checkShadows({ projectRoot: absoluteRoot }), entry.root));
   }
   return issues;
 }

@@ -19,6 +19,7 @@ export type ProfileEntry = {
   effectWrappers?: string[];
   tscAllowed?: string[];
   uiRoot?: string;
+  httpClientModule?: string;
 };
 
 export type StandardsConfig = {
@@ -34,6 +35,7 @@ export type StandardsConfig = {
   tscAllowed?: string[];
   localChecks?: Record<string, string>;
   uiRoot?: string;
+  httpClientModule?: string;
   ci?: boolean;
   projectLayerMaxLines?: {
     agents?: number;
@@ -106,6 +108,9 @@ function parseProfileEntry(value: unknown, index: number): ProfileEntry {
   if (record.uiRoot !== undefined && typeof record.uiRoot !== 'string') {
     throw new Error(`standards.json profiles[${index}].uiRoot must be a string`);
   }
+  if (record.httpClientModule !== undefined && typeof record.httpClientModule !== 'string') {
+    throw new Error(`standards.json profiles[${index}].httpClientModule must be a string`);
+  }
   return {
     profile: record.profile,
     root: normalizeRoot(record.root),
@@ -119,6 +124,8 @@ function parseProfileEntry(value: unknown, index: number): ProfileEntry {
     effectWrappers: optionalStringArray(record.effectWrappers, `profiles[${index}].effectWrappers`),
     tscAllowed: optionalStringArray(record.tscAllowed, `profiles[${index}].tscAllowed`),
     uiRoot: typeof record.uiRoot === 'string' ? record.uiRoot : undefined,
+    httpClientModule:
+      typeof record.httpClientModule === 'string' ? record.httpClientModule : undefined,
   };
 }
 
@@ -191,12 +198,17 @@ export function loadStandardsConfig(projectRoot: string): StandardsConfig {
         effectWrappers: optionalStringArray(raw.effectWrappers, 'effectWrappers'),
         tscAllowed: optionalStringArray(raw.tscAllowed, 'tscAllowed'),
         uiRoot: typeof raw.uiRoot === 'string' ? raw.uiRoot : undefined,
+        httpClientModule:
+          typeof raw.httpClientModule === 'string' ? raw.httpClientModule : undefined,
       },
     ];
   }
 
   if (raw.uiRoot !== undefined && typeof raw.uiRoot !== 'string') {
     throw new Error(`standards.json uiRoot must be a string`);
+  }
+  if (raw.httpClientModule !== undefined && typeof raw.httpClientModule !== 'string') {
+    throw new Error(`standards.json httpClientModule must be a string`);
   }
 
   const topDesign = raw.design === true || profiles.some((entry) => entry.design === true);
@@ -222,6 +234,7 @@ export function loadStandardsConfig(projectRoot: string): StandardsConfig {
     tscAllowed: optionalStringArray(raw.tscAllowed, 'tscAllowed'),
     localChecks: optionalStringRecord(raw.localChecks, 'localChecks'),
     uiRoot: typeof raw.uiRoot === 'string' ? raw.uiRoot : undefined,
+    httpClientModule: typeof raw.httpClientModule === 'string' ? raw.httpClientModule : undefined,
     ci: raw.ci === true ? true : raw.ci === false ? false : undefined,
     projectLayerMaxLines: parseProjectLayerMaxLines(raw.projectLayerMaxLines),
   };
