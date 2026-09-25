@@ -19,13 +19,13 @@ afterEach(() => {
 });
 
 describe('checkRadius', () => {
-  it('allows role radius utilities and rejects numeric, bare, arbitrary, and legacy vars', () => {
+  it('allows role radius utilities and rejects numeric, bare, arbitrary, and legacy vars in class contexts', () => {
     const root = makeScratch();
     const src = path.join(root, 'src');
     fs.mkdirSync(src, { recursive: true });
     fs.writeFileSync(
       path.join(src, 'ok.tsx'),
-      'const ok = "rounded-tight rounded-control rounded-inset rounded-container rounded-sheet rounded-full rounded-none rounded-t-container";\n'
+      'const ok = cn("rounded-tight rounded-control rounded-inset rounded-container rounded-sheet rounded-full rounded-none rounded-t-container");\n'
     );
     fs.writeFileSync(
       path.join(src, 'ok.css'),
@@ -33,13 +33,17 @@ describe('checkRadius', () => {
     );
     fs.writeFileSync(
       path.join(src, 'bad.tsx'),
-      'const bad = "rounded-lg rounded-[12px] rounded rounded-t !rounded-md";\n'
+      'const bad = cn("rounded-lg rounded-[12px] rounded rounded-t !rounded-md");\n'
     );
     fs.writeFileSync(
       path.join(src, 'bad.css'),
-      '.x { border-radius: var(--radius-md); border-radius: 8px; }\n'
+      '.x { border-radius: var(--radius-md); border-radius: 8px; }\n@apply rounded-xl;\n'
     );
     fs.writeFileSync(path.join(src, 'bad.html'), '<div class="rounded-xl"></div>\n');
+    fs.writeFileSync(
+      path.join(src, 'attr.tsx'),
+      'export function X() { return <div className="rounded-lg hover:rounded-md" />; }\n'
+    );
 
     const issues = checkRadius({ projectRoot: root });
     expect(issues.some((issue) => issue.file.endsWith('ok.tsx'))).toBe(false);
@@ -47,5 +51,21 @@ describe('checkRadius', () => {
     expect(issues.some((issue) => issue.file.endsWith('bad.tsx'))).toBe(true);
     expect(issues.some((issue) => issue.file.endsWith('bad.css'))).toBe(true);
     expect(issues.some((issue) => issue.file.endsWith('bad.html'))).toBe(true);
+    expect(issues.some((issue) => issue.file.endsWith('attr.tsx'))).toBe(true);
+  });
+
+  it('ignores identifiers, object keys, and non-class strings', () => {
+    const root = makeScratch();
+    const src = path.join(root, 'src');
+    fs.mkdirSync(src, { recursive: true });
+    fs.writeFileSync(
+      path.join(src, 'false-positives.ts'),
+      `const rounded = Math.round(seconds);
+const shape = { rounded: true };
+const note = "a rounded number looks fine";
+`
+    );
+
+    expect(checkRadius({ projectRoot: root })).toEqual([]);
   });
 });

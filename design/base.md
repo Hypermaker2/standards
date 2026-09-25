@@ -29,8 +29,8 @@ If shipped chrome disagrees with a rule here, update this document or ask.
 ## Spacing and geometry
 
 - Use the Tailwind spacing scale for layout gaps and padding.
-- Corner radius uses roles derived from one `--radius` knob: `tight` = radius − 4px, `control` = radius, `inset` = radius + 4px, `container` = radius × 2, `sheet` = radius × 2.5, `full` for capsules/circles only, `none` for flush chrome. Do not invent one-off radii.
-- A shape nested inside another uses radius = outer radius − gap, never below `tight`.
+- Corner radius uses roles derived from one `--radius` knob: `tight` = max(2px, radius − 4px), `control` = radius, `inset` = radius + 4px, `container` = radius × 2, `sheet` = radius × 2.5, `full` for capsules/circles only, `none` for flush chrome. Do not invent one-off radii.
+- A shape nested inside another uses radius = outer radius − gap, never below 2px.
 - Pill shapes (`rounded-full`) only for intentionally circular or capsule controls; never text buttons, cards, panels, or static labels.
 
 ## Token roles

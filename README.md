@@ -9,7 +9,7 @@ Values (token numbers, product rules) stay in each project. This package owns vo
 The GitHub repo is public (Bun resolves `github:` deps via the tarball API).
 
 ```bash
-bun add -d github:Hypermaker2/standards#v1.5.0
+bun add -d github:Hypermaker2/standards#v1.5.1
 ```
 
 ## Consumers
@@ -91,7 +91,7 @@ Do not keep a nested `frontend/standards.json` alongside a `profiles` entry for 
 2. Delete `frontend/standards.json`, `frontend/AGENTS.md`, and `frontend/DESIGN.md`.
 3. Move the frontend `DESIGN.md` project layer into root `DESIGN.md`, and the frontend `AGENTS.md` project-layer lines into the root `AGENTS.md` project layer.
 4. Keep a root `package.json` `check` script (hyperflow already delegates to `frontend` and `uv`).
-5. `bun remove @dino/standards && bun add -d github:Hypermaker2/standards#v1.5.0 && bunx standards sync`
+5. `bun remove @dino/standards && bun add -d github:Hypermaker2/standards#v1.5.1 && bunx standards sync`
 
 ## Ruff
 

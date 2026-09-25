@@ -44,7 +44,7 @@ const LIGHT_ROLES = `  --background: oklch(1 0 0);
   --chart-4: oklch(0.6 0.133 150);
   --chart-5: oklch(0.6 0.102 75);
   --radius: 0.625rem;
-  --radius-tight: calc(var(--radius) - 4px);
+  --radius-tight: max(2px, calc(var(--radius) - 4px));
   --radius-control: var(--radius);
   --radius-inset: calc(var(--radius) + 4px);
   --radius-container: calc(var(--radius) * 2);
@@ -208,7 +208,7 @@ ${DARK_ROLES}
   --chart-4: oklch(0.6 0.133 150);
   --chart-5: oklch(0.6 0.102 75);
   --radius: 0.625rem;
-  --radius-tight: calc(var(--radius) - 4px);
+  --radius-tight: max(2px, calc(var(--radius) - 4px));
   --radius-control: var(--radius);
   --radius-inset: calc(var(--radius) + 4px);
   --radius-container: calc(var(--radius) * 2);
@@ -239,7 +239,7 @@ ${DARK_ROLES}
     const relative = 'tokens.css';
     const css = `:root {
 ${LIGHT_ROLES.replace(
-  `  --radius-tight: calc(var(--radius) - 4px);
+  `  --radius-tight: max(2px, calc(var(--radius) - 4px));
   --radius-control: var(--radius);
   --radius-inset: calc(var(--radius) + 4px);
   --radius-container: calc(var(--radius) * 2);
@@ -255,7 +255,7 @@ ${DARK_ROLES}
 }
 
 @theme {
-  --radius-tight: calc(var(--radius) - 4px);
+  --radius-tight: max(2px, calc(var(--radius) - 4px));
   --radius-control: var(--radius);
   --radius-inset: calc(var(--radius) + 4px);
   --radius-container: calc(var(--radius) * 2);
