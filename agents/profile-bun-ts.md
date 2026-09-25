@@ -23,6 +23,6 @@
 | `oxlint` / `oxfmt`           | Lint and format                       |
 | `@typescript/native-preview` | Typecheck (`tsgo`)                    |
 | `vitest`                     | Tests                                 |
-| `oxc-parser`                 | Comment checker                       |
+| `concurrently`               | Run multiple dev servers together     |
 
 Anything outside this list is recorded in the project layer of `AGENTS.md` with a one-line reason.

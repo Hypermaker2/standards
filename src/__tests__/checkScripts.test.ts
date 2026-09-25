@@ -68,4 +68,15 @@ describe('checkScripts', () => {
     expect(issues.some((issue) => issue.message.includes('ruff'))).toBe(true);
     expect(issues.some((issue) => issue.message.includes('pytest'))).toBe(true);
   });
+
+  it('accepts ruff.base.toml plus ruff.toml for python', () => {
+    const root = makeScratch();
+    fs.writeFileSync(
+      path.join(root, 'pyproject.toml'),
+      `[project]\nname = "demo"\nversion = "0.1.0"\n[tool.pytest.ini_options]\n`
+    );
+    fs.writeFileSync(path.join(root, 'ruff.base.toml'), 'line-length = 100\n');
+    fs.writeFileSync(path.join(root, 'ruff.toml'), 'extend = "ruff.base.toml"\n');
+    expect(checkScripts(root, 'python')).toEqual([]);
+  });
 });

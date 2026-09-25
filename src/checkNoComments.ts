@@ -6,7 +6,7 @@ import type { CheckIssue, Profile } from './paths.ts';
 const SKIP_DIRS = new Set(['node_modules', 'dist', '.git', 'coverage', 'output', 'plans', 'docs']);
 
 const BUN_EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.mjs', '.css', '.sh']);
-const PYTHON_EXTENSIONS = new Set(['.py', '.ts', '.tsx']);
+const PYTHON_EXTENSIONS = new Set(['.py', '.ts', '.tsx', '.js', '.mjs', '.css', '.sh']);
 
 export type CommentScanOptions = {
   projectRoot: string;
@@ -25,6 +25,7 @@ function collectFiles(
   projectRoot: string,
   extensions: Set<string>,
   exempt: string[],
+  skipNestedStandards: boolean,
   out: string[]
 ): void {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -34,7 +35,10 @@ function collectFiles(
     if (entry.isDirectory()) {
       if (SKIP_DIRS.has(entry.name)) continue;
       if (isExempt(relativePath + '/', exempt) || isExempt(relativePath, exempt)) continue;
-      collectFiles(fullPath, projectRoot, extensions, exempt, out);
+      if (skipNestedStandards && fs.existsSync(path.join(fullPath, 'standards.json'))) {
+        continue;
+      }
+      collectFiles(fullPath, projectRoot, extensions, exempt, skipNestedStandards, out);
       continue;
     }
     if (!extensions.has(path.extname(entry.name))) continue;
@@ -120,6 +124,7 @@ function checkFile(filePath: string, projectRoot: string): CheckIssue[] {
 export function checkNoComments(options: CommentScanOptions): CheckIssue[] {
   const extensions = options.profile === 'python' ? PYTHON_EXTENSIONS : BUN_EXTENSIONS;
   const exempt = options.commentExempt ?? [];
+  const skipNestedStandards = options.profile === 'python';
   const files: string[] = [];
   for (const entry of fs.readdirSync(options.projectRoot, { withFileTypes: true })) {
     if (!entry.isDirectory()) {
@@ -131,13 +136,11 @@ export function checkNoComments(options: CommentScanOptions): CheckIssue[] {
       continue;
     }
     if (SKIP_DIRS.has(entry.name)) continue;
-    collectFiles(
-      path.join(options.projectRoot, entry.name),
-      options.projectRoot,
-      extensions,
-      exempt,
-      files
-    );
+    const fullPath = path.join(options.projectRoot, entry.name);
+    if (skipNestedStandards && fs.existsSync(path.join(fullPath, 'standards.json'))) {
+      continue;
+    }
+    collectFiles(fullPath, options.projectRoot, extensions, exempt, skipNestedStandards, files);
   }
   files.sort();
   return files.flatMap((filePath) => checkFile(filePath, options.projectRoot));

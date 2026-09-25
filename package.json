@@ -1,6 +1,6 @@
 {
   "name": "@dino/standards",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Shared agent rules, design vocabulary, and lint configs for Dino projects",
   "type": "module",
   "packageManager": "bun",

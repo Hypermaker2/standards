@@ -59,11 +59,14 @@ function checkPythonProject(projectRoot: string): CheckIssue[] {
     return issues;
   }
   const text = fs.readFileSync(pyprojectPath, 'utf8');
-  if (!/\[tool\.ruff|ruff/.test(text) && !fs.existsSync(path.join(projectRoot, 'ruff.toml'))) {
+  const hasRuffFiles =
+    fs.existsSync(path.join(projectRoot, 'ruff.base.toml')) &&
+    fs.existsSync(path.join(projectRoot, 'ruff.toml'));
+  if (!hasRuffFiles && !/\[tool\.ruff/.test(text)) {
     issues.push({
       file: 'pyproject.toml',
       line: 1,
-      message: 'ruff is not configured (need ruff.toml or [tool.ruff] in pyproject.toml)',
+      message: 'ruff is not configured (need ruff.base.toml + ruff.toml from standards sync)',
     });
   }
   if (!/\[tool\.pytest|pytest/.test(text)) {

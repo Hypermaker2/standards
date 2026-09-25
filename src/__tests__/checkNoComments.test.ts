@@ -49,4 +49,30 @@ const c = 3;
     const issues = checkNoComments({ projectRoot: root, profile: 'bun-ts' });
     expect(issues).toEqual([]);
   });
+
+  it('python profile skips nested directories that have standards.json', () => {
+    const root = makeScratch();
+    fs.mkdirSync(path.join(root, 'src'));
+    fs.writeFileSync(path.join(root, 'src', 'app.py'), `x = 1\n`);
+    fs.mkdirSync(path.join(root, 'frontend', 'src'), { recursive: true });
+    fs.writeFileSync(
+      path.join(root, 'frontend', 'standards.json'),
+      `{"profile":"bun-ts","design":false}\n`
+    );
+    fs.writeFileSync(
+      path.join(root, 'frontend', 'src', 'App.tsx'),
+      `const x = 1;\n// nested comment owned by frontend check\n`
+    );
+    const issues = checkNoComments({ projectRoot: root, profile: 'python' });
+    expect(issues).toEqual([]);
+  });
+
+  it('python profile still scans ts files outside nested consumers', () => {
+    const root = makeScratch();
+    fs.mkdirSync(path.join(root, 'scripts'));
+    fs.writeFileSync(path.join(root, 'scripts', 'tool.ts'), `const x = 1;\n// bad\n`);
+    const issues = checkNoComments({ projectRoot: root, profile: 'python' });
+    expect(issues).toHaveLength(1);
+    expect(issues[0].file).toBe(path.join('scripts', 'tool.ts'));
+  });
 });

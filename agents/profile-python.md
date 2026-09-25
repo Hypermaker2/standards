@@ -2,7 +2,7 @@
 
 - `uv` for environment and package management. Prefer `uv run` over activating a venv by hand.
 - Declare project metadata in root `pyproject.toml`. That file is the source of truth for name, version, dependencies, and tool config.
-- Ruff for lint and format. Ship root `ruff.toml` (or `[tool.ruff]` in `pyproject.toml`). Line length 100; enable E, F, I, UP, B; double quotes for format.
+- Ruff for lint and format. `@dino/standards` ships `ruff.base.toml`. Project-specific rules go in root `ruff.toml`, which must contain `extend = "ruff.base.toml"`. Remove `[tool.ruff]` from `pyproject.toml` once `ruff.toml` exists: Ruff ignores pyproject tool config when a `ruff.toml` is present.
 - Run `uv run ruff check` and `uv run ruff format` from the repo root. Do not maintain a second formatter.
 - pytest for tests. Keep fixtures close to the tests that need them. Prefer explicit asserts over heavy fixture magic.
 - Name test files `test_*.py` or `*_test.py` and keep one clear behavior per test function.

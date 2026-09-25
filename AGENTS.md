@@ -1,5 +1,5 @@
 # Standards
-<!-- standards:begin 1.0.0 bun-ts -->
+<!-- standards:begin 1.0.1 bun-ts -->
 ## Code rules
 
 - Optimize for readability and skimmability. Avoid cleverness; prefer early returns.
@@ -62,7 +62,7 @@
 | `oxlint` / `oxfmt`           | Lint and format                       |
 | `@typescript/native-preview` | Typecheck (`tsgo`)                    |
 | `vitest`                     | Tests                                 |
-| `oxc-parser`                 | Comment checker                       |
+| `concurrently`               | Run multiple dev servers together     |
 
 Anything outside this list is recorded in the project layer of `AGENTS.md` with a one-line reason.
 <!-- standards:end -->
