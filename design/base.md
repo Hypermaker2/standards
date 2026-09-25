@@ -106,4 +106,5 @@ A fill must read in both themes. A faint hover wash is too weak as a selected or
 ## Where it lives
 
 - The project's `tokens.css` is the source of truth for values.
+- Roles may be split across multiple `:root` or `.dark` blocks (including inside `@media`, `@supports`, or `@layer`). Each color role must still exist in both themes when all blocks are merged.
 - This document defines vocabulary and rules only. It never holds values.
