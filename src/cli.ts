@@ -1,3 +1,4 @@
+#!/usr/bin/env bun
 import { checkProject, reportIssues } from './check.ts';
 import { loadStandardsConfig, type Profile } from './paths.ts';
 import { initStandardsConfig, syncProject } from './sync.ts';
