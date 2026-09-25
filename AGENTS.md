@@ -1,5 +1,5 @@
 # Standards
-<!-- standards:begin 1.1.3 bun-ts -->
+<!-- standards:begin 1.1.4 bun-ts -->
 ## Code rules
 
 - Repository invariants are executable checks that run inside `lint` (a `scripts/check-*.ts` with a colocated test), never review conventions. When a legitimate new pattern needs an exception, change the check in the same change; do not disable it.

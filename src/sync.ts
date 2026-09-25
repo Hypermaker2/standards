@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { syncCiWorkflow } from './checkCi.ts';
+import { syncBunVersion, syncCiWorkflow } from './checkCi.ts';
 import { syncConfigs } from './checkConfigs.ts';
 import { applyManagedRegion, expectedAgentsBody } from './managedRegion.ts';
 import { packageVersion, readPackageText, type Profile, type StandardsConfig } from './paths.ts';
@@ -82,6 +82,7 @@ export function syncProject(projectRoot: string, config: StandardsConfig): SyncR
 
   if (config.profile === 'bun-ts' && config.ci === true) {
     results.push(syncCiWorkflow(projectRoot));
+    results.push(syncBunVersion(projectRoot));
   }
 
   return results;

@@ -9,7 +9,7 @@ Values (token numbers, product rules) stay in each project. This package owns vo
 The GitHub repo is public (Bun resolves `github:` deps via the tarball API).
 
 ```bash
-bun add -d github:Hypermaker2/standards#v1.1.3
+bun add -d github:Hypermaker2/standards#v1.1.4
 ```
 
 ## Consumers
@@ -78,7 +78,7 @@ Python sync writes `ruff.base.toml` (package defaults) and, if missing, a `ruff.
 - Bun-ts: `process.env` / `import.meta.env` only in `configModules` (plus always-exempt tests, `scripts/`, and config files). Config modules must not return, alias, or spread the raw environment object.
 - Bun-ts: `useEffect` only in `effectWrappers` (missing key bans it everywhere; tests exempt). Wrapper files must expose `useMountEffect(effect)` calling `useEffect(effect, [])` (or an aliased import with `[]`) and may expose `useSyncedEffect(effect, deps)` with required deps. Optional deps or a `useMountEffect` that accepts deps is a rename and fails.
 - Bun-ts: lockfile has no `typescript@5` / `@6`; no `tsc` in package scripts or GitHub workflows (`tscAllowed` optional).
-- Bun-ts with `ci: true`: `.github/workflows/standards.yml` matches the package template.
+- Bun-ts with `ci: true`: `.github/workflows/standards.yml` matches the package template and `.bun-version` exists.
 
 ## Recommended scripts
 
@@ -93,7 +93,12 @@ Python sync writes `ruff.base.toml` (package defaults) and, if missing, a `ruff.
 
 ## CI
 
-Set `"ci": true` in `standards.json`, then `bunx standards sync`. That writes `.github/workflows/standards.yml` (push to main and pull_request, concurrency cancel-in-progress, `oven-sh/setup-bun@v2`, Bun install cache on `bun.lock`, `bun install --frozen-lockfile`, `bun run check`). `standards check` verifies the file matches the package template byte for byte.
+Set `"ci": true` in `standards.json`, then `bunx standards sync`. That writes:
+
+- `.github/workflows/standards.yml` (push to main and pull_request, concurrency cancel-in-progress, `oven-sh/setup-bun@v2` with `bun-version-file: .bun-version`, Bun install cache on `bun.lock`, `bun install --frozen-lockfile`, `bun run check`)
+- `.bun-version` with the running Bun version (`Bun.version`) when the file is missing; an existing `.bun-version` is left unchanged
+
+`standards check` verifies the workflow matches the package template byte for byte and that `.bun-version` exists.
 
 ## Bump a version
 
