@@ -7,6 +7,7 @@ import { checkNoComments } from './checkNoComments.ts';
 import { checkNoFallbacks } from './checkNoFallbacks.ts';
 import { checkProjectLayer } from './checkProjectLayer.ts';
 import { checkScripts } from './checkScripts.ts';
+import { checkSingleAgentsFile } from './checkSingleAgentsFile.ts';
 import { checkSingleTypeScript } from './checkSingleTypeScript.ts';
 import { checkTokens } from './checkTokens.ts';
 import { checkUseEffect } from './checkUseEffect.ts';
@@ -93,6 +94,7 @@ export function checkProject(projectRoot: string, config: StandardsConfig): Chec
   }
 
   issues.push(...checkConfigs(projectRoot, config.profile));
+  issues.push(...checkSingleAgentsFile(projectRoot));
   issues.push(
     ...checkProjectLayer({
       projectRoot,

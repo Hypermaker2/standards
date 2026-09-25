@@ -1,6 +1,7 @@
 ## Working in this repo
 
 - The block between `standards:begin` and `standards:end` in `AGENTS.md` and `DESIGN.md` is written by `@dino/standards` and is never edited by hand. Change the rule in the standards repository (`Hypermaker2/standards`), release a tag, then bump every consumer: `bun remove @dino/standards && bun add -d github:Hypermaker2/standards#vX.Y.Z && bunx standards sync`. The project layer below the block is the only part edited in this repository.
+- `AGENTS.md` is the only agent instruction file; never add `CLAUDE.md`, `.cursorrules` or similar, they shadow it for one runtime and split the rules.
 - The project layer of `AGENTS.md` holds only: what the product is (two or three sentences), domain invariants an agent could break, repo-specific commands beyond the standard contract, the architecture map, recorded dependency deviations and standards.json exceptions with one line of reason each. It never holds behavior descriptions, screen or feature inventories, changelogs, plans, benchmarks, or anything package.json, the code or a test already states. Under 100 lines.
 - The project layer of `DESIGN.md` holds only product-specific design rules that the shared rules do not cover (domain color roles, density rules, product components' non-obvious constraints). It never holds token values, screen descriptions or component catalogs. Under 40 lines.
 - When either layer needs to grow past its budget, something in it belongs in code, a test, an ADR, or the shared standard. Move it there instead.

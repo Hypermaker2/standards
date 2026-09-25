@@ -9,7 +9,7 @@ Values (token numbers, product rules) stay in each project. This package owns vo
 The GitHub repo is public (Bun resolves `github:` deps via the tarball API).
 
 ```bash
-bun add -d github:Hypermaker2/standards#v1.2.0
+bun add -d github:Hypermaker2/standards#v1.2.1
 ```
 
 ## Consumers
@@ -81,6 +81,7 @@ Python sync writes `ruff.base.toml` (package defaults) and, if missing, a `ruff.
 - Bun-ts: lockfile has no `typescript@5` / `@6`; no `tsc` in package scripts or GitHub workflows (`tscAllowed` optional).
 - Bun-ts with `ci: true`: `.github/workflows/standards.yml` matches the package template and `.bun-version` exists.
 - Project layer of `AGENTS.md` / `DESIGN.md` (non-blank lines after `standards:end`) stays within `projectLayerMaxLines` (defaults 100 / 40); the configured budget is printed on failure.
+- No `CLAUDE.md`, `.claude/CLAUDE.md`, `CLAUDE.local.md`, `.cursorrules`, or `.cursor/rules/` at the consumer root (`AGENTS.md` is the single instruction file for every runtime).
 
 ## Recommended scripts
 
