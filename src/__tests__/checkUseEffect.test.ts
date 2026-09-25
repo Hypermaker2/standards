@@ -18,6 +18,28 @@ afterEach(() => {
   }
 });
 
+const RELAY_STYLE = `import {
+  useEffect as useReactEffect,
+  type DependencyList,
+  type EffectCallback,
+} from 'react';
+
+export function useMountEffect(effect: EffectCallback): void {
+  useReactEffect(effect, []);
+}
+
+export function useSyncedEffect(effect: EffectCallback, deps: DependencyList): void {
+  useReactEffect(effect, deps);
+}
+`;
+
+const RENAME_STYLE = `import { useEffect, type DependencyList, type EffectCallback } from 'react';
+
+export function useMountEffect(effect: EffectCallback, deps?: DependencyList): void {
+  useEffect(effect, deps);
+}
+`;
+
 describe('checkUseEffect', () => {
   it('bans useEffect everywhere when effectWrappers is missing', () => {
     const root = makeScratch();
@@ -35,11 +57,28 @@ describe('checkUseEffect', () => {
     const root = makeScratch();
     fs.mkdirSync(path.join(root, 'src', 'hooks'), { recursive: true });
     const wrapper = path.join('src', 'hooks', 'useMountEffect.ts');
-    fs.writeFileSync(
-      path.join(root, wrapper),
-      `import { useEffect } from 'react';\nexport function useMountEffect(fn: () => void) { useEffect(fn, []); }\n`
-    );
+    fs.writeFileSync(path.join(root, wrapper), RELAY_STYLE);
     fs.writeFileSync(path.join(root, 'src', 'App.tsx'), `export const x = 1;\n`);
     expect(checkUseEffect({ projectRoot: root, effectWrappers: [wrapper] })).toEqual([]);
+  });
+
+  it('accepts a relay-style mount and synced wrapper file', () => {
+    const root = makeScratch();
+    fs.mkdirSync(path.join(root, 'src', 'hooks'), { recursive: true });
+    const wrapper = path.join('src', 'shared', 'hooks', 'useMountEffect.ts');
+    fs.mkdirSync(path.dirname(path.join(root, wrapper)), { recursive: true });
+    fs.writeFileSync(path.join(root, wrapper), RELAY_STYLE);
+    expect(checkUseEffect({ projectRoot: root, effectWrappers: [wrapper] })).toEqual([]);
+  });
+
+  it('rejects a rename-style wrapper with optional deps', () => {
+    const root = makeScratch();
+    const wrapper = path.join('src', 'hooks', 'useMountEffect.ts');
+    fs.mkdirSync(path.dirname(path.join(root, wrapper)), { recursive: true });
+    fs.writeFileSync(path.join(root, wrapper), RENAME_STYLE);
+    const issues = checkUseEffect({ projectRoot: root, effectWrappers: [wrapper] });
+    expect(issues.some((issue) => issue.message.includes('optional'))).toBe(true);
+    expect(issues.some((issue) => issue.message.includes('must not accept a deps'))).toBe(true);
+    expect(issues.some((issue) => issue.message.includes('(effect, [])'))).toBe(true);
   });
 });

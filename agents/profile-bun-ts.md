@@ -5,15 +5,16 @@
 - Root `package.json` scripts: `dev`, `build`, `test`, `typecheck`, `lint`, `format`, `format:check`, `check`, `knip`, `audit`.
 - When applicable, monorepo shape: `shared/`, `frontend/`, `backend/`. Shared types in `shared/src`; never duplicate a type across the boundary.
 - Frontend: React 19 functional components with typed props; Vite; Tailwind v4 with tokens in a single `tokens.css` `@theme` file.
-- Never call `useEffect` directly. Prefer one of these replacements; wrapper hook files are the only allowed callers of `useEffect`:
+- Never call `useEffect` directly. Exactly two wrapper hooks are allowed as the only callers of `useEffect`: `useMountEffect(effect)` with no dependency parameter, for one-time external sync on mount; and `useSyncedEffect(effect, deps)` with a required `deps` array, for keeping an external system (DOM, subscriptions, timers, storage) in sync with state. State derivation, data fetching, and reacting to user actions never use either. A wrapper that accepts an optional deps array or forwards arbitrary arguments is a rename of `useEffect` and violates the rule.
 
-| Instead of useEffect for            | Use                      |
-| ----------------------------------- | ------------------------ |
-| Deriving state from props or state  | Compute inline           |
-| Fetching data                       | TanStack Query           |
-| Responding to user actions          | Event handlers           |
-| One-time external sync on mount     | `useMountEffect` wrapper |
-| Resetting state when a prop changes | `key` on the component   |
+| Instead of useEffect for            | Use                    |
+| ----------------------------------- | ---------------------- |
+| Deriving state from props or state  | Compute inline         |
+| Fetching data                       | TanStack Query         |
+| Responding to user actions          | Event handlers         |
+| One-time external sync on mount     | `useMountEffect`       |
+| External sync with dependencies     | `useSyncedEffect`      |
+| Resetting state when a prop changes | `key` on the component |
 
 - Features import queries and services, never the HTTP client. Responses are parsed once, at the client boundary, against the shared schemas.
 - Class composition: `cn` from the `cn` package; `cva` only as a recorded deviation.
