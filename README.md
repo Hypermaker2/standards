@@ -6,9 +6,22 @@ Values (token numbers, product rules) stay in each project. This package owns vo
 
 ## Install
 
+The GitHub repo is public (Bun resolves `github:` deps via the tarball API).
+
 ```bash
 bun add -d github:Hypermaker2/standards#v1.0.0
 ```
+
+## Consumers
+
+| Repo       | Profile                             |
+| ---------- | ----------------------------------- |
+| duet       | bun-ts                              |
+| relay      | bun-ts                              |
+| Framework  | bun-ts                              |
+| life       | bun-ts                              |
+| hyperflow  | bun-ts (frontend), python (backend) |
+| laddermind | python                              |
 
 ## Usage
 
