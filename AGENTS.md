@@ -1,5 +1,5 @@
 # Standards
-<!-- standards:begin 1.0.2 bun-ts -->
+<!-- standards:begin 1.0.3 bun-ts -->
 ## Code rules
 
 - Optimize for readability and skimmability. Avoid cleverness; prefer early returns.

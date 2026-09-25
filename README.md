@@ -9,19 +9,19 @@ Values (token numbers, product rules) stay in each project. This package owns vo
 The GitHub repo is public (Bun resolves `github:` deps via the tarball API).
 
 ```bash
-bun add -d github:Hypermaker2/standards#v1.0.2
+bun add -d github:Hypermaker2/standards#v1.0.3
 ```
 
 ## Consumers
 
-| Repo       | Profile                             |
-| ---------- | ----------------------------------- |
-| duet       | bun-ts                              |
-| relay      | bun-ts                              |
-| Framework  | bun-ts                              |
-| life       | bun-ts                              |
-| hyperflow  | bun-ts (frontend), python (backend) |
-| laddermind | python                              |
+| Repo      | Profile                             |
+| --------- | ----------------------------------- |
+| duet      | bun-ts                              |
+| relay     | bun-ts                              |
+| Framework | bun-ts                              |
+| life      | bun-ts                              |
+| hyperflow | bun-ts (frontend), python (backend) |
+| standards | bun-ts                              |
 
 ## Usage
 
@@ -65,3 +65,9 @@ Python sync writes `ruff.base.toml` (package defaults) and, if missing, a `ruff.
 2. Run `bun run check` here.
 3. Commit, tag `vX.Y.Z`, push the tag.
 4. In each consumer, bump the git dep to the new tag and run `bunx standards sync`.
+
+Bun can fail with `DependencyLoop` when bumping a `github:` dependency in place; the reliable sequence is:
+
+```bash
+bun remove @dino/standards && bun add -d github:Hypermaker2/standards#vX.Y.Z && bunx standards sync
+```
