@@ -6,7 +6,16 @@ const PACKAGE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), 
 
 export type Profile = 'bun-ts' | 'python';
 
-export type ProfileEntry = {
+export type TestBoundary = { module: string; reason: string };
+
+type TestSettings = {
+  testBudget?: { lines: number };
+  testBaselines?: { assertions: number; fakes: number };
+  testFakeTypes?: string[];
+  testBoundaries?: TestBoundary[];
+};
+
+export type ProfileEntry = TestSettings & {
   profile: Profile;
   root: string;
   design?: boolean;
@@ -22,7 +31,7 @@ export type ProfileEntry = {
   httpClientModule?: string;
 };
 
-export type StandardsConfig = {
+export type StandardsConfig = TestSettings & {
   profiles: ProfileEntry[];
   design: boolean;
   tokensCss?: string;
@@ -83,6 +92,54 @@ function optionalStringRecord(value: unknown, key: string): Record<string, strin
   return result;
 }
 
+function parseTestSettings(record: Record<string, unknown>, prefix = ''): TestSettings {
+  function numbers(key: string, fields: string[]): Record<string, number> | undefined {
+    const value = record[key];
+    if (value === undefined) return undefined;
+    if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+      throw new Error(`standards.json ${prefix}${key} must be an object`);
+    }
+    const result: Record<string, number> = {};
+    for (const field of fields) {
+      const number = (value as Record<string, unknown>)[field];
+      if (typeof number !== 'number' || !Number.isSafeInteger(number) || number < 0) {
+        throw new Error(`standards.json ${prefix}${key}.${field} must be a nonnegative integer`);
+      }
+      result[field] = number;
+    }
+    return result;
+  }
+  const budget = numbers('testBudget', ['lines']);
+  const baselines = numbers('testBaselines', ['assertions', 'fakes']);
+  let boundaries: TestBoundary[] | undefined;
+  if (record.testBoundaries !== undefined) {
+    if (!Array.isArray(record.testBoundaries))
+      throw new Error(`standards.json ${prefix}testBoundaries must be an array`);
+    boundaries = record.testBoundaries.map((value: unknown) => {
+      if (value === null || typeof value !== 'object')
+        throw new Error('testBoundaries entries must be objects');
+      const boundary = value as Record<string, unknown>;
+      if (
+        typeof boundary.module !== 'string' ||
+        boundary.module.trim().length === 0 ||
+        typeof boundary.reason !== 'string' ||
+        boundary.reason.trim().length === 0
+      )
+        throw new Error('testBoundaries entries require a nonempty module and reason');
+      return { module: boundary.module, reason: boundary.reason };
+    });
+  }
+  return {
+    testBudget: budget === undefined ? undefined : { lines: budget.lines },
+    testBaselines:
+      baselines === undefined
+        ? undefined
+        : { assertions: baselines.assertions, fakes: baselines.fakes },
+    testFakeTypes: optionalStringArray(record.testFakeTypes, `${prefix}testFakeTypes`),
+    testBoundaries: boundaries,
+  };
+}
+
 function normalizeRoot(root: string): string {
   if (root === '.' || root === './' || root === '') return '.';
   return root.replace(/^\.\//, '').replace(/\/$/, '');
@@ -112,6 +169,7 @@ function parseProfileEntry(value: unknown, index: number): ProfileEntry {
     throw new Error(`standards.json profiles[${index}].httpClientModule must be a string`);
   }
   return {
+    ...parseTestSettings(record, `profiles[${index}].`),
     profile: record.profile,
     root: normalizeRoot(record.root),
     design: record.design,
@@ -186,6 +244,7 @@ export function loadStandardsConfig(projectRoot: string): StandardsConfig {
     }
     profiles = [
       {
+        ...parseTestSettings(raw),
         profile: raw.profile,
         root: '.',
         design: raw.design,
@@ -222,6 +281,7 @@ export function loadStandardsConfig(projectRoot: string): StandardsConfig {
   }
 
   return {
+    ...parseTestSettings(raw),
     profiles,
     design: topDesign,
     tokensCss: topTokens,

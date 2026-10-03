@@ -1,5 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { collectTestFiles } from './testFiles.ts';
+import { countTestAssertions } from './checkTestAssertions.ts';
+import { countTestFakes } from './checkTestFakes.ts';
 import { syncBunVersion, syncCiWorkflow } from './checkCi.ts';
 import { syncConfigs } from './checkConfigs.ts';
 import {
@@ -38,10 +41,20 @@ function writeTextIfChanged(targetPath: string, contents: string): 'written' | '
 
 export function initStandardsConfig(projectRoot: string, options: SyncInitOptions): SyncResult {
   const configPath = path.join(projectRoot, 'standards.json');
+  if (fs.existsSync(configPath))
+    throw new Error('standards.json already exists; sync --init cannot reset frozen test counts');
   const config: Record<string, unknown> = {
     profile: options.profile,
     design: typeof options.design === 'string',
   };
+  if (options.profile === 'bun-ts') {
+    const inventory = collectTestFiles(projectRoot);
+    config.testBudget = { lines: inventory.lines };
+    config.testBaselines = {
+      assertions: countTestAssertions(inventory),
+      fakes: countTestFakes(inventory, projectRoot),
+    };
+  }
   if (typeof options.design === 'string') {
     config.tokensCss = options.design;
   }

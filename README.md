@@ -9,7 +9,7 @@ Values (token numbers, product rules) stay in each project. This package owns vo
 The GitHub repo is public (Bun resolves `github:` deps via the tarball API).
 
 ```bash
-bun add -d github:Hypermaker2/standards#v1.5.1
+bun add -d github:Hypermaker2/standards#v1.8.0
 ```
 
 ## Consumers
@@ -21,6 +21,7 @@ bun add -d github:Hypermaker2/standards#v1.5.1
 | Framework | bun-ts                           |
 | life      | bun-ts                           |
 | hyperflow | python root + bun-ts `frontend/` |
+| goesting  | bun-ts                           |
 | standards | bun-ts                           |
 
 ## Usage
@@ -36,24 +37,28 @@ bunx standards check
 
 ## standards.json keys
 
-| Key                    | Default                             | Purpose                                                                                                                                         |
-| ---------------------- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `profile`              | (or use `profiles`)                 | single-profile shorthand: `bun-ts` or `python` (means `[{ profile, root: "." }]`)                                                               |
-| `profiles`             | unset                               | array of `{ profile, root, ... }`; use for mixed repos with one root `AGENTS.md`                                                                |
-| `design`               | required for single-profile         | whether root `DESIGN.md` and token checks run; may also be set on a profile entry                                                               |
-| `tokensCss`            | unset                               | path to tokens.css when design is true (repo-relative at top level, or profile-root-relative on a profile entry)                                |
-| `commentExempt`        | `[]`                                | path prefixes skipped by the comment scanner (profile-relative when set on a profile entry)                                                     |
-| `extraRoles`           | `[]`                                | additional token roles allowed beyond the package list                                                                                          |
-| `fallbackExempt`       | `[]`                                | path prefixes skipped by the no-fallbacks check                                                                                                 |
-| `configModules`        | unset                               | files allowed to read env keys; must export parsed values only                                                                                  |
-| `envReadExempt`        | `[]`                                | path prefixes skipped by the env-read check                                                                                                     |
-| `effectWrappers`       | unset (ban everywhere)              | files allowed to call `useEffect`                                                                                                               |
-| `tscAllowed`           | `[]`                                | workspace directories allowed to keep `tsc` in scripts                                                                                          |
-| `localChecks`          | `{}`                                | map of `scripts/check-*.ts` path → one-line reason the check is project-only; undeclared local checks fail                                      |
-| `uiRoot`               | `frontend/src/shared/components/ui` | optional path to shared UI primitives for the control-size check (profile-relative when set on a profile)                                       |
-| `httpClientModule`     | convention suffixes                 | optional extra HTTP client module path suffix forbidden in `features/**` (defaults cover `lib/api`, `shared/lib/api`, `api/http`, `api/client`) |
-| `ci`                   | `false`                             | when true and any bun-ts profile exists, sync writes root CI workflow + `.bun-version`                                                          |
-| `projectLayerMaxLines` | `{ agents: 100, design: 40 }`       | optional budgets for non-blank project-layer lines after `standards:end`                                                                        |
+| Key                    | Default                                | Purpose                                                                                                                                                                                                          |
+| ---------------------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `profile`              | (or use `profiles`)                    | single-profile shorthand: `bun-ts` or `python` (means `[{ profile, root: "." }]`)                                                                                                                                |
+| `profiles`             | unset                                  | array of `{ profile, root, ... }`; use for mixed repos with one root `AGENTS.md`                                                                                                                                 |
+| `design`               | required for single-profile            | whether root `DESIGN.md` and token checks run; may also be set on a profile entry                                                                                                                                |
+| `tokensCss`            | unset                                  | path to tokens.css when design is true (repo-relative at top level, or profile-root-relative on a profile entry)                                                                                                 |
+| `commentExempt`        | `[]`                                   | path prefixes skipped by the comment scanner (profile-relative when set on a profile entry)                                                                                                                      |
+| `extraRoles`           | `[]`                                   | additional token roles allowed beyond the package list                                                                                                                                                           |
+| `fallbackExempt`       | `[]`                                   | path prefixes skipped by the no-fallbacks check                                                                                                                                                                  |
+| `configModules`        | unset                                  | files allowed to read env keys; must export parsed values only                                                                                                                                                   |
+| `envReadExempt`        | `[]`                                   | path prefixes skipped by the env-read check                                                                                                                                                                      |
+| `effectWrappers`       | unset (ban everywhere)                 | files allowed to call `useEffect`                                                                                                                                                                                |
+| `tscAllowed`           | `[]`                                   | workspace directories allowed to keep `tsc` in scripts                                                                                                                                                           |
+| `localChecks`          | `{}`                                   | map of `scripts/check-*.ts` path → one-line reason the check is project-only; undeclared local checks fail                                                                                                       |
+| `uiRoot`               | `frontend/src/shared/components/ui`    | optional path to shared UI primitives for the control-size check (profile-relative when set on a profile)                                                                                                        |
+| `httpClientModule`     | convention suffixes                    | optional extra HTTP client module path suffix forbidden in `features/**` (defaults cover `lib/api`, `shared/lib/api`, `api/http`, `api/client`)                                                                  |
+| `testBudget.lines`     | required for bun-ts                    | Frozen nonblank test/setup/helper lines per profile root; above fails, more than 2% below requires lowering to the measured count. Never raise without explicit user approval.                                   |
+| `testBaselines`        | required for bun-ts                    | `{ assertions, fakes }` nonnegative site counts with the same ratchet. Never raise without explicit user approval.                                                                                               |
+| `testFakeTypes`        | `DbClient`, `PrismaClient`, `Database` | Type names forbidden in double casts through `unknown`; an explicit list replaces the defaults.                                                                                                                  |
+| `testBoundaries`       | `[]`                                   | Exact repo-relative module path (with or without extension) or workspace package plus nonempty reason: `{ module, reason }`. Only genuine process/network/clock/browser adapters; database clients are rejected. |
+| `ci`                   | `false`                                | when true and any bun-ts profile exists, sync writes root CI workflow + `.bun-version`                                                                                                                           |
+| `projectLayerMaxLines` | `{ agents: 100, design: 40 }`          | optional budgets for non-blank project-layer lines after `standards:end`                                                                                                                                         |
 
 ## Mixed repos
 
@@ -70,6 +75,8 @@ One repository, one `AGENTS.md`. Declare every stack in root `standards.json` wi
       "tokensCss": "src/styles/tokens.css",
       "configModules": ["src/lib/env.ts"],
       "effectWrappers": ["src/lib/effects.ts"],
+      "testBudget": { "lines": 0 },
+      "testBaselines": { "assertions": 0, "fakes": 0 },
       "commentExempt": ["src/generated", "scripts/fixtures"]
     }
   ],
@@ -94,7 +101,7 @@ Do not keep a nested `frontend/standards.json` alongside a `profiles` entry for 
 2. Delete `frontend/standards.json`, `frontend/AGENTS.md`, and `frontend/DESIGN.md`.
 3. Move the frontend `DESIGN.md` project layer into root `DESIGN.md`, and the frontend `AGENTS.md` project-layer lines into the root `AGENTS.md` project layer.
 4. Keep a root `package.json` `check` script (hyperflow already delegates to `frontend` and `uv`).
-5. `bun remove @dino/standards && bun add -d github:Hypermaker2/standards#v1.5.1 && bunx standards sync`
+5. `bun remove @dino/standards && bun add -d github:Hypermaker2/standards#v1.8.0 && bunx standards sync`
 
 ## Ruff
 
@@ -117,6 +124,16 @@ Python sync writes `ruff.base.toml` (package defaults) and, if missing, a `ruff.
 - Project layer of `AGENTS.md` / `DESIGN.md` (non-blank lines after `standards:end`) stays within `projectLayerMaxLines` (defaults 100 / 40); the configured budget is printed on failure.
 - No `CLAUDE.md`, `.claude/CLAUDE.md`, `CLAUDE.local.md`, `.cursorrules`, or `.cursor/rules/` at the consumer root (`AGENTS.md` is the single instruction file for every runtime).
 - No nested `standards.json` under a directory already listed in root `profiles`.
+
+## Frozen test counts
+
+Each bun-ts profile requires its own `testBudget` and `testBaselines`. Set them at the top level for the single-profile shorthand. Set them on each bun-ts profile entry in mixed repos. `sync --init` measures initial counts and refuses to overwrite existing configuration. Upgrades print measured counts through `check`. Set these counts once to freeze the existing suite. Normal `sync` never changes them.
+
+The budget includes `*.test.*` and `*.spec.*` files, test-directory text fixtures, named test setup/helper/harness files, and code files importing Vitest. Git-ignored files, dependencies and build/output directories are excluded. The test-to-source ratio divides nonblank test lines by other nonblank JS/TS code lines under that profile root. The 0.35 ratio is a goal, never a gate.
+
+Assertions count class/style assertions, snapshots, and `readFileSync`/`Bun.file` reads of `.ts`, `.tsx` or `.css` paths. Fakes count own-module `vi.mock`/`vi.doMock`, replacing `vi.spyOn` on imported own bindings, and configured double-cast types. Resolution follows relative paths, inherited tsconfig paths and local workspace package names. External packages do not count. Boundary paths are repository-relative, including mixed repos. Exemptions are exact, never directory prefixes.
+
+A measured count above its frozen value fails. A count below 98% fails with the new value to record. At exactly 98% it passes. Every run prints all three measurements. Raising a baseline requires the user's explicit approval. Tools never reset existing baselines.
 
 ## Recommended scripts
 

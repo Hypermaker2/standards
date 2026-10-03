@@ -1,10 +1,16 @@
 ## Bun / TypeScript stack
 
-- Bun for everything (`bun install`, `bun run`). oxlint lint, oxfmt format, tsgo (`@typescript/native-preview`) typecheck, Vitest tests. knip for unused deps/exports/files; `bun audit` fails on high or critical. Both run in `lint`/`check`.
-- One TypeScript: `tsgo` (`@typescript/native-preview`) only. No `tsc` in scripts or CI; no `typescript@5` or `@6` in the lockfile. Emit via `tsgo` or `bun build`. Root scripts: `dev`, `build`, `test`, `typecheck`, `lint`, `format`, `format:check`, `check`, `knip`, `audit`. Monorepo when applicable: `shared/`, `frontend/`, `backend/`; shared types in `shared/src`; never duplicate across the boundary. Frontend: React 19 functional components with typed props; Vite; Tailwind v4 with tokens in one `tokens.css` `@theme` file.
-- Never call `useEffect` directly. Only two wrappers may: `useMountEffect(effect)` (no deps; one-time external sync on mount) and `useSyncedEffect(effect, deps)` (required `deps`; sync DOM, subscriptions, timers, or storage with state). Never use either for state derivation, data fetching, user-action reactions, or prop-change resets (`key` on the component). An optional-deps or arbitrary-forwarding wrapper is a rename and fails the rule.
-- Features import queries and services, never the HTTP client; parse responses once at the client boundary against shared schemas. `cn` from the `cn` package for class composition; `cva` only as a recorded deviation. Base UI via `@base-ui/react` (shadcn `base-nova`); own components under `shared/components/ui`. TanStack Query for server state; Express 5; SQLite; zod at untrusted boundaries. Icons from a local icons module; no icon packages in feature files.
+- Use Bun, oxlint, oxfmt, tsgo (`@typescript/native-preview`), Vitest and knip. Unused deps/exports/files and high/critical `bun audit` findings fail `lint`/`check`.
+- Only tsgo for TypeScript; no `tsc` scripts/CI or `typescript@5`/`@6` in the lockfile. Emit via tsgo or `bun build`. Root scripts: `dev`, `build`, `test`, `typecheck`, `lint`, `format`, `format:check`, `check`, `knip`, `audit`. Stack: React 19 typed functional components, Vite, Tailwind v4 with one `tokens.css` `@theme`; monorepos use `shared/`, `frontend/`, `backend/`, with boundary types in `shared/src`.
+- Never call `useEffect` directly. Only `useMountEffect(effect)` (no deps; mount sync) and `useSyncedEffect(effect, deps)` (required deps; DOM, subscriptions, timers, storage) may. Never use them for derivation, fetching, user actions or prop resets (use `key`). Optional deps or forwarding wrappers fail.
+- Features import queries/services, never HTTP clients; parse responses once at the client boundary with shared schemas. Use `cn` from `cn`; record `cva` deviations. Base UI: `@base-ui/react` (shadcn `base-nova`), own UI in `shared/components/ui`. TanStack Query, Express 5, SQLite, zod at untrusted boundaries. Icons via a local module, never packages in features.
 
-## Approved dependencies
+## Tests
 
-Approved: `bun`, `react`/`react-dom`, `vite`, `tailwindcss`, `@base-ui/react`, `@tanstack/react-query`, `express`, `zod`, `oxlint`/`oxfmt`, `@typescript/native-preview`, `vitest`, `knip`, `concurrently`. Anything else: project layer of `AGENTS.md` with a one-line reason.
+- Name the user-visible bug each test catches.
+- Run real code; only process, network, clock and browser-platform adapters may be faked via `testBoundaries`. Never fake the database.
+- No other kept test catches the same bug.
+- Types, lint or a standards check must not already guarantee it.
+- Survive behavior-preserving refactors.
+- Bug fixes get one regression test that fails before the fix and counts in the budget; add more only for distinct paths.
+- Never raise `testBudget` or a test baseline without the user's explicit approval.

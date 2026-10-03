@@ -55,7 +55,7 @@ function listGitFiles(projectRoot: string): string[] | null {
 function collectFilesWalk(
   dir: string,
   projectRoot: string,
-  extensions: Set<string>,
+  extensions: Set<string> | undefined,
   exempt: string[],
   skipNestedStandards: boolean,
   out: string[]
@@ -73,7 +73,7 @@ function collectFilesWalk(
       collectFilesWalk(fullPath, projectRoot, extensions, exempt, skipNestedStandards, out);
       continue;
     }
-    if (!extensions.has(path.extname(entry.name))) continue;
+    if (extensions !== undefined && !extensions.has(path.extname(entry.name))) continue;
     if (isExemptPath(relativePath, exempt)) continue;
     out.push(fullPath);
   }
@@ -81,7 +81,7 @@ function collectFilesWalk(
 
 type ListProjectFilesOptions = {
   projectRoot: string;
-  extensions: Set<string>;
+  extensions: Set<string> | undefined;
   exempt?: string[];
   skipNestedStandards?: boolean;
 };
@@ -93,7 +93,8 @@ export function listProjectFiles(options: ListProjectFilesOptions): string[] {
   const gitFiles = listGitFiles(options.projectRoot);
   if (gitFiles !== null) {
     for (const relativePath of gitFiles) {
-      if (!options.extensions.has(path.extname(relativePath))) continue;
+      if (options.extensions !== undefined && !options.extensions.has(path.extname(relativePath)))
+        continue;
       if (pathHasSkippedSegment(relativePath)) continue;
       if (isExemptPath(relativePath, exempt)) continue;
       if (skipNestedStandards && isUnderNestedStandards(options.projectRoot, relativePath)) {
@@ -109,7 +110,7 @@ export function listProjectFiles(options: ListProjectFilesOptions): string[] {
   for (const entry of fs.readdirSync(options.projectRoot, { withFileTypes: true })) {
     if (!entry.isDirectory()) {
       const ext = path.extname(entry.name);
-      if (!options.extensions.has(ext)) continue;
+      if (options.extensions !== undefined && !options.extensions.has(ext)) continue;
       if (isExemptPath(entry.name, exempt)) continue;
       out.push(path.join(options.projectRoot, entry.name));
       continue;

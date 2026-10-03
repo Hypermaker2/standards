@@ -1,4 +1,11 @@
 {
   "profile": "bun-ts",
-  "design": false
+  "design": false,
+  "testBudget": {
+    "lines": 2027
+  },
+  "testBaselines": {
+    "assertions": 0,
+    "fakes": 0
+  }
 }

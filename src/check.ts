@@ -17,6 +17,10 @@ import { checkScripts } from './checkScripts.ts';
 import { checkShadows } from './checkShadows.ts';
 import { checkSingleAgentsFile } from './checkSingleAgentsFile.ts';
 import { checkSingleTypeScript } from './checkSingleTypeScript.ts';
+import { checkTestBudget } from './checkTestBudget.ts';
+import { checkTestAssertions, countTestAssertions } from './checkTestAssertions.ts';
+import { checkTestFakes, countTestFakes } from './checkTestFakes.ts';
+import { collectTestFiles } from './testFiles.ts';
 import { checkTokens } from './checkTokens.ts';
 import { checkUseEffect } from './checkUseEffect.ts';
 import { expectedAgentsBody, expectedMultiAgentsBody, findManagedRegion } from './managedRegion.ts';
@@ -141,6 +145,25 @@ function checkBunTsProfile(
 ): CheckIssue[] {
   const absoluteRoot = profileAbsoluteRoot(projectRoot, entry);
   const issues: CheckIssue[] = [];
+  const inventory = collectTestFiles(absoluteRoot);
+  const settings = entry.root === '.' ? { ...config, ...entry } : entry;
+  const assertions = countTestAssertions(inventory);
+  const fakes = countTestFakes(
+    inventory,
+    projectRoot,
+    settings.testBoundaries,
+    settings.testFakeTypes
+  );
+  const ratio =
+    inventory.sourceLines === 0 ? 'n/a' : (inventory.lines / inventory.sourceLines).toFixed(2);
+  console.log(
+    `${entry.root}: test lines ${inventory.lines}; assertions ${assertions}; fakes ${fakes}; test-to-source ratio ${ratio} (goal 0.35)`
+  );
+  issues.push(...rebaseIssues(checkTestBudget(inventory, settings.testBudget?.lines), entry.root));
+  issues.push(
+    ...rebaseIssues(checkTestAssertions(assertions, settings.testBaselines?.assertions), entry.root)
+  );
+  issues.push(...rebaseIssues(checkTestFakes(fakes, settings.testBaselines?.fakes), entry.root));
   issues.push(...rebaseIssues(checkConfigs(absoluteRoot, 'bun-ts'), entry.root));
   issues.push(...rebaseIssues(checkScripts(absoluteRoot, 'bun-ts'), entry.root));
   issues.push(
